@@ -1,0 +1,60 @@
+<app-form-dialog [(visible)]="visible" [header]="unit() ? 'Edit Unit' : 'Add Unit'" width="560px">
+  <form [formGroup]="form" (ngSubmit)="save()" class="form-grid" novalidate>
+    <div class="field">
+      <label for="unit-name">Unit Name <span class="req">*</span></label>
+      <input pInputText id="unit-name" formControlName="name" placeholder="e.g. Kilogram" maxlength="30" />
+      <app-field-error [control]="form.controls.name" label="Unit name" />
+    </div>
+
+    <div class="field">
+      <label for="unit-code">Short Code <span class="req">*</span></label>
+      <input
+        pInputText
+        id="unit-code"
+        formControlName="shortCode"
+        placeholder="e.g. KG"
+        maxlength="5"
+        style="text-transform: uppercase"
+      />
+      <app-field-error
+        [control]="form.controls.shortCode"
+        label="Short code"
+        [messages]="{ pattern: 'Use letters only, e.g. PCS or KG' }"
+      />
+    </div>
+
+    <div class="field">
+      <label for="unit-decimal">Allow Decimal Qty</label>
+      <div class="field-inline">
+        <p-toggleswitch inputId="unit-decimal" formControlName="allowDecimal" />
+        <span class="muted small">
+          {{ form.controls.allowDecimal.value ? 'Yes — e.g. 0.500 KG' : 'No — whole numbers only' }}
+        </span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label id="unit-status-label">Status</label>
+      <p-selectbutton
+        [options]="statusOptions"
+        optionLabel="label"
+        optionValue="value"
+        formControlName="status"
+        [allowEmpty]="false"
+        ariaLabelledBy="unit-status-label"
+      />
+    </div>
+    <button type="submit" hidden aria-hidden="true"></button>
+  </form>
+
+  <div dialogFooter class="dialog-footer">
+    <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="visible.set(false)" />
+    <p-button
+      label="Save"
+      icon="pi pi-check"
+      [loading]="saving()"
+      [disabled]="form.invalid || saving()"
+      (onClick)="save()"
+    />
+  </div>
+</app-form-dialog>

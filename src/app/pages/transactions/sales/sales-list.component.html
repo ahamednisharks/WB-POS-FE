@@ -1,0 +1,240 @@
+<div class="page">
+  <app-page-header
+    title="Sales Transactions"
+    [subtitle]="
+      isAdmin()
+        ? 'Payments, refunds and cash-outs recorded at the till'
+        : 'Your till movements for today'
+    "
+    searchPlaceholder="Search txn, bill no or reference"
+    [showAdd]="false"
+    (search)="onSearch($event)"
+  >
+    <div headerActions class="flex items-center gap-1 wrap">
+      @if (isAdmin()) {
+        <p-button
+          label="Excel"
+          icon="pi pi-file-excel"
+          severity="secondary"
+          [outlined]="true"
+          [loading]="exporting() === 'excel'"
+          [disabled]="!!exporting()"
+          pTooltip="Export all filtered transactions to Excel"
+          tooltipPosition="bottom"
+          ariaLabel="Export to Excel"
+          (onClick)="export('excel')"
+        />
+        <p-button
+          label="PDF"
+          icon="pi pi-file-pdf"
+          severity="secondary"
+          [outlined]="true"
+          [loading]="exporting() === 'pdf'"
+          [disabled]="!!exporting()"
+          pTooltip="Export all filtered transactions to PDF"
+          tooltipPosition="bottom"
+          ariaLabel="Export to PDF"
+          (onClick)="export('pdf')"
+        />
+      }
+      <p-button label="Day Close" icon="pi pi-lock" (onClick)="dayCloseVisible.set(true)" />
+    </div>
+
+    <div class="filter-bar">
+      @if (isAdmin()) {
+        <app-date-range-filter
+          [(preset)]="preset"
+          [(range)]="range"
+          (changed)="applyFilters()"
+          label="Date range"
+        />
+      }
+      <div class="filter">
+        <label for="txn-mode">Payment Mode</label>
+        <p-select
+          inputId="txn-mode"
+          [options]="modeOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All modes"
+          [showClear]="true"
+          [ngModel]="mode()"
+          (ngModelChange)="mode.set($event); applyFilters()"
+        />
+      </div>
+      <div class="filter">
+        <label for="txn-type">Type</label>
+        <p-select
+          inputId="txn-type"
+          [options]="typeOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All types"
+          [showClear]="true"
+          [ngModel]="type()"
+          (ngModelChange)="type.set($event); applyFilters()"
+        />
+      </div>
+      @if (isAdmin()) {
+        <div class="filter">
+          <label for="txn-cashier">Cashier</label>
+          <p-select
+            inputId="txn-cashier"
+            [options]="cashierOptions()"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="All cashiers"
+            [filter]="true"
+            filterBy="label"
+            [showClear]="true"
+            [ngModel]="cashierId()"
+            (ngModelChange)="cashierId.set($event); applyFilters()"
+          />
+        </div>
+      } @else {
+        <p class="cashier-note muted small">
+          <i class="pi pi-info-circle" aria-hidden="true"></i>
+          Showing your transactions for today
+        </p>
+      }
+    </div>
+  </app-page-header>
+
+  <!-- Summary cards: skeleton on first load, dimmed while refreshing, hidden when loading failed. -->
+  @if (summary() || !error()) {
+    <section
+      class="stat-grid"
+      [class.refreshing]="loading() && !!summary()"
+      aria-label="Transaction summary"
+    >
+      @if (summary()) {
+        @for (c of cards(); track c.label) {
+          <div class="stat-card">
+            <span class="stat-label">
+              <span [class]="'stat-icon tone-' + c.tone"
+                ><i [class]="c.icon" aria-hidden="true"></i
+              ></span>
+              {{ c.label }}
+            </span>
+            <span class="stat-value" [class.neg]="c.danger"
+              >{{ c.outflow ? '−' : '' }}{{ c.value | inr }}</span
+            >
+            <span class="stat-sub">{{ c.sub }}</span>
+          </div>
+        }
+      } @else {
+        @for (s of summarySkeleton; track s) {
+          <div class="stat-card" aria-hidden="true">
+            <p-skeleton width="55%" height="0.9rem" />
+            <p-skeleton width="70%" height="1.6rem" />
+            <p-skeleton width="45%" height="0.75rem" />
+          </div>
+        }
+      }
+    </section>
+  }
+
+  <div class="card p-0">
+    <p-table
+      [value]="loading() ? [] : rows()"
+      [lazy]="true"
+      (onLazyLoad)="onLazyLoad($event)"
+      [paginator]="true"
+      [rows]="pageSize()"
+      [first]="first()"
+      [totalRecords]="total()"
+      [rowsPerPageOptions]="pageSizeOptions"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="{first}–{last} of {totalRecords}"
+      [loading]="loading()"
+      [showLoader]="false"
+      sortField="txnDate"
+      [sortOrder]="-1"
+      dataKey="id"
+      [scrollable]="true"
+      [rowHover]="true"
+      [tableStyle]="{ 'min-width': '62rem' }"
+    >
+      <ng-template #header>
+        <tr>
+          <th pSortableColumn="txnNo">Txn ID <p-sortIcon field="txnNo" /></th>
+          <th pSortableColumn="txnDate">Date / Time <p-sortIcon field="txnDate" /></th>
+          <th pSortableColumn="billNo">Bill No <p-sortIcon field="billNo" /></th>
+          <th pSortableColumn="type">Type <p-sortIcon field="type" /></th>
+          <th pSortableColumn="mode">Mode <p-sortIcon field="mode" /></th>
+          <th pSortableColumn="amount" class="text-right">
+            Amount ₹ <p-sortIcon field="amount" />
+          </th>
+          <th>Reference</th>
+          <th pSortableColumn="cashierName">Cashier <p-sortIcon field="cashierName" /></th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-t>
+        <tr>
+          <td>
+            <code class="code">{{ t.txnNo }}</code>
+          </td>
+          <td class="nowrap">{{ t.txnDate | istDateTime }}</td>
+          <td>
+            @if (t.billId) {
+              <a class="bill-link" [routerLink]="['/orders', t.billId]">{{ t.billNo }}</a>
+            } @else {
+              <span class="muted">—</span>
+            }
+          </td>
+          <td><app-status-tag [status]="t.type" /></td>
+          <td>{{ modeText(t.mode) }}</td>
+          <td class="text-right num bold" [class.neg]="t.type !== 'PAYMENT'">
+            {{ t.type !== 'PAYMENT' ? '−' : '' }}{{ t.amount | inr }}
+          </td>
+          <td class="muted small ref-cell">
+            @if (t.reference || t.note; as ref) {
+              <span [title]="ref">{{ ref }}</span>
+            } @else {
+              —
+            }
+          </td>
+          <td class="nowrap">{{ t.cashierName }}</td>
+        </tr>
+      </ng-template>
+
+      <ng-template #loadingbody>
+        @for (r of skeletonRows; track r) {
+          <tr appSkeletonRow [cols]="8"></tr>
+        }
+      </ng-template>
+
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="8">
+            @if (error(); as e) {
+              <app-empty-state
+                icon="pi pi-exclamation-triangle"
+                title="Could not load transactions"
+                [message]="e"
+                actionLabel="Retry"
+                (action)="load()"
+              />
+            } @else {
+              <app-empty-state
+                icon="pi pi-wallet"
+                title="No transactions found"
+                [message]="
+                  isAdmin()
+                    ? 'No payments, refunds or cash-outs match this period and filters.'
+                    : 'You have not recorded any transactions today yet.'
+                "
+                [actionLabel]="hasFilters() ? 'Clear filters' : ''"
+                actionIcon="pi pi-filter-slash"
+                (action)="clearFilters()"
+              />
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<app-day-close-dialog [(visible)]="dayCloseVisible" />

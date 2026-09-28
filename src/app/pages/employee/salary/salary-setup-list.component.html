@@ -1,0 +1,124 @@
+<div class="filter-bar tab-toolbar">
+  <div class="filter search-filter">
+    <label for="setup-search">Search</label>
+    <p-iconfield class="search">
+      <p-inputicon styleClass="pi pi-search" />
+      <input
+        #q
+        pInputText
+        id="setup-search"
+        type="search"
+        placeholder="Employee name or Emp ID"
+        (input)="search$.next(q.value)"
+      />
+    </p-iconfield>
+  </div>
+  <p-button class="toolbar-add" label="Add Setup" icon="pi pi-plus" (onClick)="openForm()" />
+</div>
+
+<div class="table-box">
+  <p-table
+    [value]="loading() ? [] : rows()"
+    [lazy]="true"
+    (onLazyLoad)="onLazyLoad($event)"
+    [paginator]="true"
+    [rows]="pageSize()"
+    [first]="first()"
+    [totalRecords]="total()"
+    [rowsPerPageOptions]="pageSizeOptions"
+    [showCurrentPageReport]="true"
+    currentPageReportTemplate="{first}–{last} of {totalRecords}"
+    [loading]="loading()"
+    [showLoader]="false"
+    sortField="createdAt"
+    [sortOrder]="-1"
+    dataKey="id"
+    [scrollable]="true"
+    [rowHover]="true"
+    [tableStyle]="{ 'min-width': '52rem' }"
+  >
+    <ng-template #header>
+      <tr>
+        <th pSortableColumn="empCode" style="width: 7rem">Emp ID <p-sortIcon field="empCode" /></th>
+        <th pSortableColumn="employeeName">Name <p-sortIcon field="employeeName" /></th>
+        <th pSortableColumn="salaryType">Salary Type <p-sortIcon field="salaryType" /></th>
+        <th pSortableColumn="basicSalary" class="text-right">Basic ₹ <p-sortIcon field="basicSalary" /></th>
+        <th pSortableColumn="allowances" class="text-right">Allowances ₹ <p-sortIcon field="allowances" /></th>
+        <th pSortableColumn="effectiveFrom">Effective From <p-sortIcon field="effectiveFrom" /></th>
+        <th class="text-right" style="width: 7rem">Actions</th>
+      </tr>
+    </ng-template>
+
+    <ng-template #body let-s>
+      <tr>
+        <td><span class="code">{{ s.empCode }}</span></td>
+        <td class="bold">{{ s.employeeName }}</td>
+        <td>{{ s.salaryType | enumLabel }}</td>
+        <td class="text-right num">
+          {{ s.basicSalary | inr }}
+          @if (s.salaryType === 'DAILY') {
+            <span class="muted small">/day</span>
+          }
+        </td>
+        <td class="text-right num">{{ s.allowances | inr }}</td>
+        <td class="nowrap">{{ s.effectiveFrom | istDate }}</td>
+        <td>
+          <div class="row-actions">
+            <p-button
+              icon="pi pi-pencil"
+              [text]="true"
+              [rounded]="true"
+              pTooltip="Edit"
+              tooltipPosition="top"
+              ariaLabel="Edit salary setup"
+              (onClick)="openForm(s)"
+            />
+            <p-button
+              icon="pi pi-trash"
+              severity="danger"
+              [text]="true"
+              [rounded]="true"
+              pTooltip="Delete"
+              tooltipPosition="top"
+              ariaLabel="Delete salary setup"
+              (onClick)="remove(s)"
+            />
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template #loadingbody>
+      @for (r of skeletonRows; track r) {
+        <tr appSkeletonRow [cols]="7"></tr>
+      }
+    </ng-template>
+
+    <ng-template #emptymessage>
+      <tr>
+        <td colspan="7">
+          @if (error(); as e) {
+            <app-empty-state
+              icon="pi pi-exclamation-triangle"
+              title="Could not load salary setups"
+              [message]="e"
+              actionLabel="Retry"
+              (action)="load()"
+            />
+          } @else {
+            <app-empty-state
+              icon="pi pi-sliders-h"
+              title="No salary setups found"
+              message="Set each employee's salary type (monthly or daily), basic pay and allowances. Monthly payments are calculated from this."
+              actionLabel="Add Setup"
+              actionIcon="pi pi-plus"
+              (action)="openForm()"
+            />
+          }
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>
+
+<app-salary-setup-form [(visible)]="formVisible" [setup]="editing()" (saved)="load()" />

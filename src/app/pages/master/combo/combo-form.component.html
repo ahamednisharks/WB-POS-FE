@@ -1,0 +1,207 @@
+<app-form-dialog [(visible)]="visible" [header]="combo() ? 'Edit Combo' : 'Add Combo'" width="820px" [maximizable]="true">
+  <form [formGroup]="form" (ngSubmit)="save()" class="form-grid" novalidate>
+    <div class="field span-all">
+      <label for="combo-name">Combo Name <span class="req">*</span></label>
+      <input pInputText id="combo-name" formControlName="name" placeholder="e.g. Tea Time Combo" maxlength="60" />
+      <app-field-error [control]="form.controls.name" label="Combo name" />
+    </div>
+
+    <div class="form-section-title">Items in combo <span class="req">*</span></div>
+
+    <div class="span-all combo-lines" formArrayName="items">
+      <div class="lines-head" aria-hidden="true">
+        <span>Item</span>
+        <span>Qty</span>
+        <span class="text-right">Amount</span>
+        <span></span>
+      </div>
+
+      @for (row of rows.controls; track row; let i = $index) {
+        <div class="combo-line" [formGroupName]="i">
+          <div class="field item-cell">
+            <label class="sr-only" [for]="'combo-item-' + i">Item {{ i + 1 }}</label>
+            <p-select
+              [inputId]="'combo-item-' + i"
+              [options]="optionsAt(i)"
+              optionLabel="label"
+              optionValue="value"
+              formControlName="itemId"
+              [filter]="true"
+              filterBy="label"
+              [loading]="loadingOptions()"
+              placeholder="Select item"
+              emptyMessage="No sale items available"
+            />
+            <app-field-error [control]="row.controls.itemId" label="Item" [messages]="{ required: 'Select an item' }" />
+          </div>
+
+          <div class="field qty-cell">
+            <label class="sr-only" [for]="'combo-qty-' + i">Qty for item {{ i + 1 }}</label>
+            <p-inputnumber
+              [inputId]="'combo-qty-' + i"
+              formControlName="qty"
+              [min]="0"
+              [minFractionDigits]="0"
+              [maxFractionDigits]="decimalsAt(i)"
+              placeholder="Qty"
+            />
+            <app-field-error
+              [control]="row.controls.qty"
+              label="Qty"
+              [messages]="{ required: 'Enter qty', min: 'Qty must be more than 0' }"
+            />
+          </div>
+
+          <div class="amount-cell num">{{ amountAt(i) | inr }}</div>
+
+          <p-button
+            icon="pi pi-trash"
+            severity="danger"
+            [text]="true"
+            [rounded]="true"
+            pTooltip="Remove"
+            tooltipPosition="top"
+            [ariaLabel]="'Remove item ' + (i + 1)"
+            [disabled]="rows.length <= 2"
+            (onClick)="removeRow(i)"
+          />
+        </div>
+      }
+
+      <app-field-error
+        [control]="rows"
+        label="Items"
+        [messages]="{ minRows: 'Add at least 2 items', duplicate: 'Each item can be added only once' }"
+      />
+
+      <div class="flex items-center gap-1 wrap">
+        <p-button
+          label="Add Item"
+          icon="pi pi-plus"
+          size="small"
+          [outlined]="true"
+          [disabled]="!canAddRow()"
+          (onClick)="addRow()"
+        />
+        <small class="muted">A combo needs at least 2 different items.</small>
+      </div>
+    </div>
+
+    <div class="form-section-title">Pricing</div>
+
+    <div class="field">
+      <label id="combo-actual-label">Actual Price</label>
+      <div class="readonly-box num" aria-labelledby="combo-actual-label">{{ actualPrice() | inr }}</div>
+      <small class="hint">Σ item price × qty</small>
+    </div>
+
+    <div class="field">
+      <label for="combo-price">Combo Price ₹ <span class="req">*</span></label>
+      <p-inputnumber
+        inputId="combo-price"
+        formControlName="comboPrice"
+        mode="currency"
+        currency="INR"
+        locale="en-IN"
+        [min]="0"
+        [maxFractionDigits]="2"
+        placeholder="₹0.00"
+      />
+      <app-field-error [control]="form.controls.comboPrice" label="Combo price" [messages]="comboPriceMessages()" />
+    </div>
+
+    <div class="field">
+      <label id="combo-savings-label">Savings</label>
+      <div class="readonly-box num" aria-labelledby="combo-savings-label">
+        @if (savings() > 0) {
+          <span class="yes">{{ savings() | inr }} ({{ savingsPercent() }}% off)</span>
+        } @else {
+          <span class="muted">—</span>
+        }
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="combo-gst">GST %</label>
+      <p-select
+        inputId="combo-gst"
+        [options]="gstOptions"
+        optionLabel="label"
+        optionValue="value"
+        formControlName="gstPercent"
+        placeholder="Auto (highest item GST)"
+        (onChange)="onGstPicked()"
+      />
+      @if (gstManual() && highestGst() !== null && form.controls.gstPercent.value !== highestGst()) {
+        <small class="hint">
+          Highest item GST is {{ highestGst() }}% ·
+          <button type="button" class="link-btn" (click)="useHighestGst()">Use {{ highestGst() }}%</button>
+        </small>
+      } @else {
+        <small class="hint">Defaults to the highest GST of the chosen items</small>
+      }
+    </div>
+
+    <div class="form-section-title">Validity &amp; display</div>
+
+    <div class="field">
+      <label for="combo-from">Valid From</label>
+      <p-datepicker
+        inputId="combo-from"
+        formControlName="validFrom"
+        [showIcon]="true"
+        [showClear]="true"
+        dateFormat="dd-mm-yy"
+        placeholder="dd-mm-yyyy"
+      />
+    </div>
+
+    <div class="field">
+      <label for="combo-to">Valid To</label>
+      <p-datepicker
+        inputId="combo-to"
+        formControlName="validTo"
+        [showIcon]="true"
+        [showClear]="true"
+        dateFormat="dd-mm-yy"
+        placeholder="dd-mm-yyyy"
+        [minDate]="validFrom()"
+      />
+      <app-field-error
+        [control]="form.controls.validTo"
+        label="Valid To"
+        [messages]="{ beforeFrom: 'Valid To must be on or after Valid From' }"
+      />
+    </div>
+
+    <div class="field">
+      <label id="combo-image-label">Image</label>
+      <app-image-picker formControlName="image" [maxMb]="1" hint="JPG or PNG, up to 1 MB" />
+      <app-field-error [control]="form.controls.image" label="Image" />
+    </div>
+
+    <div class="field">
+      <label id="combo-status-label">Status</label>
+      <p-selectbutton
+        [options]="statusOptions"
+        optionLabel="label"
+        optionValue="value"
+        formControlName="status"
+        [allowEmpty]="false"
+        ariaLabelledBy="combo-status-label"
+      />
+    </div>
+    <button type="submit" hidden aria-hidden="true"></button>
+  </form>
+
+  <div dialogFooter class="dialog-footer">
+    <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="visible.set(false)" />
+    <p-button
+      label="Save"
+      icon="pi pi-check"
+      [loading]="saving()"
+      [disabled]="form.invalid || saving()"
+      (onClick)="save()"
+    />
+  </div>
+</app-form-dialog>

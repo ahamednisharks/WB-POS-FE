@@ -1,0 +1,116 @@
+<div class="page">
+  <app-page-header
+    title="Employee Type"
+    subtitle="Roles in the bakery (Manager, Cashier, Baker …) and whether they can log in"
+    searchPlaceholder="Search type or description"
+    addLabel="Add Type"
+    (search)="onSearch($event)"
+    (add)="openForm()"
+  />
+
+  <div class="card p-0">
+    <p-table
+      [value]="loading() ? [] : rows()"
+      [lazy]="true"
+      (onLazyLoad)="onLazyLoad($event)"
+      [paginator]="true"
+      [rows]="pageSize()"
+      [first]="first()"
+      [totalRecords]="total()"
+      [rowsPerPageOptions]="pageSizeOptions"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="{first}–{last} of {totalRecords}"
+      [loading]="loading()"
+      [showLoader]="false"
+      sortField="createdAt"
+      [sortOrder]="-1"
+      dataKey="id"
+      [scrollable]="true"
+      [rowHover]="true"
+      [tableStyle]="{ 'min-width': '48rem' }"
+    >
+      <ng-template #header>
+        <tr>
+          <th style="width: 4.5rem">S.No</th>
+          <th pSortableColumn="name">Type Name <p-sortIcon field="name" /></th>
+          <th>Description</th>
+          <th pSortableColumn="canLogin">Can Login <p-sortIcon field="canLogin" /></th>
+          <th pSortableColumn="status">Status <p-sortIcon field="status" /></th>
+          <th class="text-right" style="width: 7rem">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-type let-i="rowIndex">
+        <tr>
+          <td class="muted">{{ i + 1 }}</td>
+          <td class="bold">{{ type.name }}</td>
+          <td class="muted">{{ type.description || '—' }}</td>
+          <td>
+            @if (type.canLogin) {
+              <span class="yes"><i class="pi pi-check-circle" aria-hidden="true"></i> Yes</span>
+            } @else {
+              <span class="muted">No</span>
+            }
+          </td>
+          <td><app-status-tag [status]="type.status" /></td>
+          <td>
+            <div class="row-actions">
+              <p-button
+                icon="pi pi-pencil"
+                [text]="true"
+                [rounded]="true"
+                pTooltip="Edit"
+                tooltipPosition="top"
+                ariaLabel="Edit employee type"
+                (onClick)="openForm(type)"
+              />
+              <p-button
+                icon="pi pi-trash"
+                severity="danger"
+                [text]="true"
+                [rounded]="true"
+                pTooltip="Delete"
+                tooltipPosition="top"
+                ariaLabel="Delete employee type"
+                (onClick)="remove(type)"
+              />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template #loadingbody>
+        @for (r of skeletonRows; track r) {
+          <tr appSkeletonRow [cols]="6"></tr>
+        }
+      </ng-template>
+
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="6">
+            @if (error(); as e) {
+              <app-empty-state
+                icon="pi pi-exclamation-triangle"
+                title="Could not load employee types"
+                [message]="e"
+                actionLabel="Retry"
+                (action)="load()"
+              />
+            } @else {
+              <app-empty-state
+                icon="pi pi-id-card"
+                title="No employee types found"
+                message="Add types such as Manager, Cashier, Baker, Helper or Delivery before adding employees."
+                actionLabel="Add Type"
+                actionIcon="pi pi-plus"
+                (action)="openForm()"
+              />
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<app-employee-type-form [(visible)]="formVisible" [employeeType]="editing()" (saved)="load()" />

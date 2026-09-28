@@ -1,0 +1,155 @@
+<app-form-dialog [(visible)]="visible" [header]="supplier() ? 'Edit Supplier' : 'Add Supplier'" width="720px">
+  <form [formGroup]="form" (ngSubmit)="save()" class="form-grid" novalidate>
+    <div class="field">
+      <label id="sup-code-label">Supplier Code</label>
+      <div class="readonly-box" aria-labelledby="sup-code-label">
+        @if (supplier(); as s) {
+          <code class="code">{{ s.code }}</code>
+        } @else {
+          <span class="muted">Auto (e.g. SUP001)</span>
+        }
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="sup-name">Supplier Name <span class="req">*</span></label>
+      <input pInputText id="sup-name" formControlName="name" placeholder="e.g. Sri Lakshmi Flour Mills" maxlength="80" />
+      <app-field-error [control]="form.controls.name" label="Supplier name" />
+    </div>
+
+    <div class="field">
+      <label for="sup-contact">Contact Person</label>
+      <input pInputText id="sup-contact" formControlName="contactPerson" placeholder="e.g. Venkatesh R" maxlength="60" />
+      <app-field-error [control]="form.controls.contactPerson" label="Contact person" />
+    </div>
+
+    <div class="field">
+      <label for="sup-mobile">Mobile <span class="req">*</span></label>
+      <input
+        pInputText
+        id="sup-mobile"
+        formControlName="mobile"
+        placeholder="10-digit mobile"
+        maxlength="10"
+        inputmode="numeric"
+        autocomplete="tel"
+      />
+      <app-field-error
+        [control]="form.controls.mobile"
+        label="Mobile"
+        [messages]="{ pattern: 'Enter a valid 10-digit mobile number' }"
+      />
+    </div>
+
+    <div class="field">
+      <label for="sup-email">Email</label>
+      <input pInputText id="sup-email" type="email" formControlName="email" placeholder="e.g. orders@supplier.in" />
+      <app-field-error [control]="form.controls.email" label="Email" />
+    </div>
+
+    <div class="field">
+      <label for="sup-state">State <span class="req">*</span></label>
+      <p-select
+        inputId="sup-state"
+        [options]="states"
+        optionLabel="label"
+        optionValue="value"
+        formControlName="state"
+        [filter]="true"
+        filterBy="label"
+        placeholder="Select state"
+      />
+      <app-field-error [control]="form.controls.state" label="State" />
+    </div>
+
+    <div class="field span-all">
+      <label for="sup-address">Address <span class="req">*</span></label>
+      <textarea
+        pTextarea
+        id="sup-address"
+        formControlName="address"
+        rows="2"
+        maxlength="250"
+        placeholder="Door no, street, area, city - PIN"
+      ></textarea>
+      <app-field-error [control]="form.controls.address" label="Address" />
+    </div>
+
+    <div class="field">
+      <label for="sup-gstin">GSTIN</label>
+      <input
+        pInputText
+        id="sup-gstin"
+        formControlName="gstin"
+        placeholder="e.g. 33AAACS1234K1Z2"
+        maxlength="15"
+        style="text-transform: uppercase"
+      />
+      <app-field-error
+        [control]="form.controls.gstin"
+        label="GSTIN"
+        [messages]="{ pattern: 'Enter a valid 15-character GSTIN' }"
+      />
+    </div>
+
+    <div class="field">
+      <label for="sup-terms">Payment Terms</label>
+      <p-inputnumber
+        inputId="sup-terms"
+        formControlName="paymentTermsDays"
+        [min]="0"
+        [max]="365"
+        [useGrouping]="false"
+        suffix=" days"
+      />
+      <app-field-error [control]="form.controls.paymentTermsDays" label="Payment terms" />
+    </div>
+
+    <div class="field">
+      <label for="sup-opening">Opening Balance ₹</label>
+      <p-inputnumber
+        inputId="sup-opening"
+        formControlName="openingBalance"
+        mode="currency"
+        currency="INR"
+        locale="en-IN"
+        [maxFractionDigits]="2"
+      />
+      <small class="hint">Amount already payable to this supplier</small>
+    </div>
+
+    @if (supplier(); as s) {
+      <div class="field">
+        <label id="sup-balance-label">Current Balance ₹</label>
+        <div class="readonly-box num" aria-labelledby="sup-balance-label">
+          <span [style.color]="s.currentBalance > 0 ? 'var(--danger)' : null">{{ s.currentBalance | inr }}</span>
+        </div>
+        <small class="hint">Opening balance + purchases − payments</small>
+      </div>
+    }
+
+    <div class="field">
+      <label id="sup-status-label">Status</label>
+      <p-selectbutton
+        [options]="statusOptions"
+        optionLabel="label"
+        optionValue="value"
+        formControlName="status"
+        [allowEmpty]="false"
+        ariaLabelledBy="sup-status-label"
+      />
+    </div>
+    <button type="submit" hidden aria-hidden="true"></button>
+  </form>
+
+  <div dialogFooter class="dialog-footer">
+    <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="visible.set(false)" />
+    <p-button
+      label="Save"
+      icon="pi pi-check"
+      [loading]="saving()"
+      [disabled]="form.invalid || saving()"
+      (onClick)="save()"
+    />
+  </div>
+</app-form-dialog>

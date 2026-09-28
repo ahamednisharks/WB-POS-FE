@@ -1,0 +1,213 @@
+<div class="page">
+  <app-page-header
+    title="Purchase Orders"
+    subtitle="Orders placed with suppliers — stock is added only when goods are received (Purchase Entry)"
+    searchPlaceholder="Search PO no, supplier or item"
+    addLabel="New PO"
+    (search)="onSearch($event)"
+    (add)="openForm()"
+  >
+    <div class="filter-bar">
+      <app-date-range-filter [(preset)]="preset" [(range)]="range" label="PO Date" (changed)="applyFilters()" />
+      <div class="filter">
+        <label for="po-f-supplier">Supplier</label>
+        <p-select
+          inputId="po-f-supplier"
+          [options]="suppliers()"
+          optionLabel="name"
+          optionValue="id"
+          [filter]="true"
+          [showClear]="true"
+          placeholder="All suppliers"
+          [ngModel]="supplierId()"
+          (ngModelChange)="onSupplierFilter($event)"
+        />
+      </div>
+      <div class="filter">
+        <label for="po-f-status">Status</label>
+        <p-select
+          inputId="po-f-status"
+          [options]="statusOptions"
+          optionLabel="label"
+          optionValue="value"
+          [showClear]="true"
+          placeholder="All statuses"
+          [ngModel]="status()"
+          (ngModelChange)="onStatusFilter($event)"
+        />
+      </div>
+    </div>
+  </app-page-header>
+
+  <div class="card p-0">
+    <p-table
+      [value]="loading() ? [] : rows()"
+      [lazy]="true"
+      (onLazyLoad)="onLazyLoad($event)"
+      [paginator]="true"
+      [rows]="pageSize()"
+      [first]="first()"
+      [totalRecords]="total()"
+      [rowsPerPageOptions]="pageSizeOptions"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="{first}–{last} of {totalRecords}"
+      [loading]="loading()"
+      [showLoader]="false"
+      sortField="createdAt"
+      [sortOrder]="-1"
+      dataKey="id"
+      [scrollable]="true"
+      [rowHover]="true"
+      [tableStyle]="{ 'min-width': '70rem' }"
+    >
+      <ng-template #header>
+        <tr>
+          <th pSortableColumn="poNo">PO No <p-sortIcon field="poNo" /></th>
+          <th pSortableColumn="poDate">PO Date <p-sortIcon field="poDate" /></th>
+          <th pSortableColumn="supplierName">Supplier <p-sortIcon field="supplierName" /></th>
+          <th>Items</th>
+          <th pSortableColumn="grandTotal" class="text-right">Grand Total <p-sortIcon field="grandTotal" /></th>
+          <th pSortableColumn="expectedDate">Expected Date <p-sortIcon field="expectedDate" /></th>
+          <th pSortableColumn="status">Status <p-sortIcon field="status" /></th>
+          <th class="text-right" style="width: 16rem">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-po>
+        <tr>
+          <td>
+            <button type="button" class="link-btn nowrap" (click)="view(po)">{{ po.poNo }}</button>
+          </td>
+          <td class="nowrap">{{ po.poDate | istDate }}</td>
+          <td>
+            <div class="bold">{{ po.supplierName }}</div>
+            <div class="muted small">{{ po.supplierState }}</div>
+          </td>
+          <td>
+            <span class="nowrap" [pTooltip]="itemNames(po)" tooltipPosition="top">
+              {{ po.items.length }} {{ po.items.length === 1 ? 'item' : 'items' }}
+            </span>
+          </td>
+          <td class="text-right num bold">{{ po.grandTotal | inr }}</td>
+          <td class="nowrap">{{ (po.expectedDate | istDate) || '—' }}</td>
+          <td><app-status-tag [status]="po.status" /></td>
+          <td>
+            <div class="row-actions">
+              <p-button
+                icon="pi pi-eye"
+                [text]="true"
+                [rounded]="true"
+                pTooltip="View"
+                tooltipPosition="top"
+                ariaLabel="View purchase order"
+                (onClick)="view(po)"
+              />
+              @if (canEdit(po)) {
+                <p-button
+                  icon="pi pi-pencil"
+                  [text]="true"
+                  [rounded]="true"
+                  pTooltip="Edit draft"
+                  tooltipPosition="top"
+                  ariaLabel="Edit purchase order"
+                  (onClick)="openForm(po)"
+                />
+              }
+              <p-button
+                icon="pi pi-print"
+                severity="secondary"
+                [text]="true"
+                [rounded]="true"
+                pTooltip="Print"
+                tooltipPosition="top"
+                ariaLabel="Print purchase order"
+                (onClick)="print(po)"
+              />
+              <p-button
+                icon="pi pi-whatsapp"
+                severity="success"
+                [text]="true"
+                [rounded]="true"
+                pTooltip="Share on WhatsApp"
+                tooltipPosition="top"
+                ariaLabel="Share purchase order on WhatsApp"
+                (onClick)="share(po)"
+              />
+              @if (canConvert(po)) {
+                <p-button
+                  icon="pi pi-file-import"
+                  severity="info"
+                  [text]="true"
+                  [rounded]="true"
+                  pTooltip="Convert to Purchase Entry"
+                  tooltipPosition="top"
+                  ariaLabel="Convert to purchase entry"
+                  (onClick)="convert(po)"
+                />
+              }
+              @if (canCancel(po)) {
+                <p-button
+                  icon="pi pi-ban"
+                  severity="warn"
+                  [text]="true"
+                  [rounded]="true"
+                  pTooltip="Cancel PO"
+                  tooltipPosition="top"
+                  ariaLabel="Cancel purchase order"
+                  (onClick)="openCancel(po)"
+                />
+              }
+              @if (canEdit(po)) {
+                <p-button
+                  icon="pi pi-trash"
+                  severity="danger"
+                  [text]="true"
+                  [rounded]="true"
+                  pTooltip="Delete draft"
+                  tooltipPosition="top"
+                  ariaLabel="Delete purchase order"
+                  (onClick)="remove(po)"
+                />
+              }
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template #loadingbody>
+        @for (r of skeletonRows; track r) {
+          <tr appSkeletonRow [cols]="8"></tr>
+        }
+      </ng-template>
+
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="8">
+            @if (error(); as e) {
+              <app-empty-state
+                icon="pi pi-exclamation-triangle"
+                title="Could not load purchase orders"
+                [message]="e"
+                actionLabel="Retry"
+                (action)="load()"
+              />
+            } @else {
+              <app-empty-state
+                icon="pi pi-shopping-cart"
+                title="No purchase orders found"
+                message="No purchase orders match these filters. Create a PO to order raw materials from a supplier."
+                actionLabel="New PO"
+                actionIcon="pi pi-plus"
+                (action)="openForm()"
+              />
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<app-po-form [(visible)]="formVisible" [po]="editing()" (saved)="load()" />
+<app-po-view [(visible)]="viewVisible" [po]="viewing()" />
+<app-po-cancel [(visible)]="cancelVisible" [po]="cancelling()" (cancelled)="onCancelled($event)" />

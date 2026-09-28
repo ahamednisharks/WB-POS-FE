@@ -1,0 +1,53 @@
+<app-form-dialog [(visible)]="visible" [header]="category() ? 'Edit Category' : 'Add Category'" width="560px">
+  <form [formGroup]="form" (ngSubmit)="save()" class="form-grid" novalidate>
+    <div class="field span-all">
+      <label for="cat-name">Category Name <span class="req">*</span></label>
+      <input pInputText id="cat-name" formControlName="name" placeholder="e.g. Cakes" maxlength="50" />
+      <app-field-error [control]="form.controls.name" label="Category name" />
+    </div>
+
+    <div class="field span-all">
+      <label id="cat-image-label">Image</label>
+      <app-image-picker formControlName="image" [maxMb]="1" hint="JPG or PNG, up to 1 MB" />
+      <app-field-error [control]="form.controls.image" label="Image" />
+    </div>
+
+    <div class="field">
+      <label for="cat-order">Display Order</label>
+      <p-inputnumber
+        inputId="cat-order"
+        formControlName="displayOrder"
+        [min]="0"
+        [max]="9999"
+        [useGrouping]="false"
+        [showButtons]="true"
+      />
+      <small class="hint">Lower numbers appear first on the billing screen</small>
+      <app-field-error [control]="form.controls.displayOrder" label="Display order" />
+    </div>
+
+    <div class="field">
+      <label id="cat-status-label">Status</label>
+      <p-selectbutton
+        [options]="statusOptions"
+        optionLabel="label"
+        optionValue="value"
+        formControlName="status"
+        [allowEmpty]="false"
+        ariaLabelledBy="cat-status-label"
+      />
+    </div>
+    <button type="submit" hidden aria-hidden="true"></button>
+  </form>
+
+  <div dialogFooter class="dialog-footer">
+    <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="visible.set(false)" />
+    <p-button
+      label="Save"
+      icon="pi pi-check"
+      [loading]="saving()"
+      [disabled]="form.invalid || saving()"
+      (onClick)="save()"
+    />
+  </div>
+</app-form-dialog>

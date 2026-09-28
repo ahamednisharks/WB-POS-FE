@@ -1,0 +1,130 @@
+<div class="page">
+  <app-page-header
+    title="Supplier Master"
+    subtitle="Vendors you buy raw materials and stock from"
+    searchPlaceholder="Search name, code, mobile or GSTIN"
+    addLabel="Add Supplier"
+    (search)="onSearch($event)"
+    (add)="openForm()"
+  />
+
+  <div class="card p-0">
+    <p-table
+      [value]="loading() ? [] : rows()"
+      [lazy]="true"
+      (onLazyLoad)="onLazyLoad($event)"
+      [paginator]="true"
+      [rows]="pageSize()"
+      [first]="first()"
+      [totalRecords]="total()"
+      [rowsPerPageOptions]="pageSizeOptions"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="{first}–{last} of {totalRecords}"
+      [loading]="loading()"
+      [showLoader]="false"
+      sortField="createdAt"
+      [sortOrder]="-1"
+      dataKey="id"
+      [scrollable]="true"
+      [rowHover]="true"
+      [tableStyle]="{ 'min-width': '56rem' }"
+    >
+      <ng-template #header>
+        <tr>
+          <th pSortableColumn="code" style="width: 7rem">Code <p-sortIcon field="code" /></th>
+          <th pSortableColumn="name">Name <p-sortIcon field="name" /></th>
+          <th pSortableColumn="mobile">Mobile <p-sortIcon field="mobile" /></th>
+          <th pSortableColumn="gstin">GSTIN <p-sortIcon field="gstin" /></th>
+          <th pSortableColumn="currentBalance" class="text-right">Balance ₹ <p-sortIcon field="currentBalance" /></th>
+          <th pSortableColumn="status">Status <p-sortIcon field="status" /></th>
+          <th class="text-right" style="width: 7rem">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-supplier>
+        <tr>
+          <td><code class="code">{{ supplier.code }}</code></td>
+          <td>
+            <div class="bold">{{ supplier.name }}</div>
+            <div class="muted small">
+              {{ supplier.contactPerson ? supplier.contactPerson + ' · ' : '' }}{{ supplier.state }}
+            </div>
+          </td>
+          <td class="nowrap">
+            <a [href]="'tel:' + supplier.mobile">{{ supplier.mobile }}</a>
+          </td>
+          <td>
+            @if (supplier.gstin) {
+              <span class="nowrap">{{ supplier.gstin }}</span>
+            } @else {
+              <span class="muted">—</span>
+            }
+          </td>
+          <td class="text-right num">
+            <span [class.due]="supplier.currentBalance > 0">{{ supplier.currentBalance | inr }}</span>
+            @if (supplier.currentBalance > 0) {
+              <div class="muted small">due</div>
+            }
+          </td>
+          <td><app-status-tag [status]="supplier.status" /></td>
+          <td>
+            <div class="row-actions">
+              <p-button
+                icon="pi pi-pencil"
+                [text]="true"
+                [rounded]="true"
+                pTooltip="Edit"
+                tooltipPosition="top"
+                ariaLabel="Edit supplier"
+                (onClick)="openForm(supplier)"
+              />
+              <p-button
+                icon="pi pi-trash"
+                severity="danger"
+                [text]="true"
+                [rounded]="true"
+                pTooltip="Delete"
+                tooltipPosition="top"
+                ariaLabel="Delete supplier"
+                (onClick)="remove(supplier)"
+              />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template #loadingbody>
+        @for (r of skeletonRows; track r) {
+          <tr appSkeletonRow [cols]="7"></tr>
+        }
+      </ng-template>
+
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="7">
+            @if (error(); as e) {
+              <app-empty-state
+                icon="pi pi-exclamation-triangle"
+                title="Could not load suppliers"
+                [message]="e"
+                actionLabel="Retry"
+                (action)="load()"
+              />
+            } @else {
+              <app-empty-state
+                icon="pi pi-truck"
+                title="No suppliers found"
+                message="Add the vendors you buy flour, dairy and packed goods from."
+                actionLabel="Add Supplier"
+                actionIcon="pi pi-plus"
+                (action)="openForm()"
+              />
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<app-supplier-form [(visible)]="formVisible" [supplier]="editing()" (saved)="load()" />

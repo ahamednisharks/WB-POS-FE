@@ -1,0 +1,135 @@
+<app-form-dialog [(visible)]="visible" [header]="isEdit() ? 'Edit Login' : 'Create Login'" width="600px">
+  <form [formGroup]="form" (ngSubmit)="save()" class="form-grid" novalidate autocomplete="off">
+    <div class="field span-all">
+      @if (login(); as l) {
+        <label id="lf-emp-label">Employee</label>
+        <div class="readonly-box" aria-labelledby="lf-emp-label">
+          <span class="code">{{ l.empCode }}</span>&nbsp;{{ l.employeeName }}
+        </div>
+      } @else {
+        <label for="lf-emp">Employee <span class="req">*</span></label>
+        <p-select
+          inputId="lf-emp"
+          formControlName="employeeId"
+          [options]="employeeOptions()"
+          optionLabel="label"
+          optionValue="value"
+          [filter]="true"
+          filterBy="label"
+          [loading]="optionsLoading()"
+          placeholder="Select employee"
+          emptyMessage="No eligible employees"
+          appendTo="body"
+        />
+        <app-field-error [control]="form.controls.employeeId" label="Employee" />
+        @if (!optionsLoading() && employeeOptions().length === 0) {
+          <small class="warn-text">
+            No eligible employees. Only active employees whose type has “Can Login” ON and who don't already have a
+            login are listed.
+          </small>
+        } @else {
+          <small class="hint">Only active employees whose type can log in and who have no login yet.</small>
+        }
+      }
+    </div>
+
+    <div class="field span-all">
+      <label for="lf-username">Username <span class="req">*</span></label>
+      <input
+        pInputText
+        id="lf-username"
+        formControlName="username"
+        maxlength="30"
+        placeholder="e.g. ramesh"
+        autocapitalize="off"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <app-field-error
+        [control]="form.controls.username"
+        label="Username"
+        [messages]="{ pattern: 'Username must be 3–30 characters with no spaces' }"
+      />
+    </div>
+
+    @if (!isEdit()) {
+      <div class="field">
+        <label for="lf-password">Password <span class="req">*</span></label>
+        <p-password
+          inputId="lf-password"
+          formControlName="password"
+          [toggleMask]="true"
+          [feedback]="false"
+          autocomplete="new-password"
+          placeholder="Min 6 characters"
+          appendTo="body"
+        />
+        <app-field-error [control]="form.controls.password" label="Password" />
+      </div>
+
+      <div class="field">
+        <label for="lf-confirm">Confirm Password <span class="req">*</span></label>
+        <p-password
+          inputId="lf-confirm"
+          formControlName="confirmPassword"
+          [toggleMask]="true"
+          [feedback]="false"
+          autocomplete="new-password"
+          placeholder="Re-enter password"
+          appendTo="body"
+        />
+        <app-field-error [control]="form.controls.confirmPassword" label="Confirm password" />
+        @if (mismatch) {
+          <small class="error-text" role="alert">Passwords do not match</small>
+        }
+      </div>
+    }
+
+    <div class="field">
+      <label id="lf-role-label">Role <span class="req">*</span></label>
+      <p-selectbutton
+        [options]="roleOptions"
+        optionLabel="label"
+        optionValue="value"
+        formControlName="role"
+        [allowEmpty]="false"
+        ariaLabelledBy="lf-role-label"
+      />
+      <app-field-error [control]="form.controls.role" label="Role" />
+    </div>
+
+    <div class="field">
+      <label id="lf-status-label">Status</label>
+      <p-selectbutton
+        [options]="statusOptions"
+        optionLabel="label"
+        optionValue="value"
+        formControlName="status"
+        [allowEmpty]="false"
+        ariaLabelledBy="lf-status-label"
+      />
+    </div>
+
+    @if (login(); as l) {
+      <div class="field span-all">
+        <label id="lf-last-label">Last Login</label>
+        <div class="readonly-box" aria-labelledby="lf-last-label">
+          {{ l.lastLogin ? (l.lastLogin | istDateTime) : 'Never' }}
+        </div>
+        <small class="hint">To change the password, use Reset Password from the list.</small>
+      </div>
+    }
+    <button type="submit" hidden aria-hidden="true"></button>
+  </form>
+
+  <div dialogFooter class="dialog-footer">
+    <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="visible.set(false)" />
+    <p-button
+      label="Save"
+      icon="pi pi-check"
+      [loading]="saving()"
+      [disabled]="form.invalid || saving()"
+      (onClick)="save()"
+    />
+  </div>
+</app-form-dialog>

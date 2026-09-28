@@ -1,0 +1,123 @@
+<div class="page">
+  <app-page-header
+    title="Category"
+    subtitle="Group items for the billing screen (Cakes, Breads, Puffs …)"
+    searchPlaceholder="Search category name"
+    addLabel="Add Category"
+    (search)="onSearch($event)"
+    (add)="openForm()"
+  />
+
+  <div class="card p-0">
+    <p-table
+      [value]="loading() ? [] : rows()"
+      [lazy]="true"
+      (onLazyLoad)="onLazyLoad($event)"
+      [paginator]="true"
+      [rows]="pageSize()"
+      [first]="first()"
+      [totalRecords]="total()"
+      [rowsPerPageOptions]="pageSizeOptions"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="{first}–{last} of {totalRecords}"
+      [loading]="loading()"
+      [showLoader]="false"
+      sortField="createdAt"
+      [sortOrder]="-1"
+      dataKey="id"
+      [scrollable]="true"
+      [rowHover]="true"
+      [tableStyle]="{ 'min-width': '48rem' }"
+    >
+      <ng-template #header>
+        <tr>
+          <th style="width: 4.5rem">S.No</th>
+          <th style="width: 5rem">Image</th>
+          <th pSortableColumn="name">Category Name <p-sortIcon field="name" /></th>
+          <th pSortableColumn="itemCount" class="text-right">No. of Items <p-sortIcon field="itemCount" /></th>
+          <th pSortableColumn="displayOrder" class="text-right">Order <p-sortIcon field="displayOrder" /></th>
+          <th pSortableColumn="status">Status <p-sortIcon field="status" /></th>
+          <th class="text-right" style="width: 7rem">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-category let-i="rowIndex">
+        <tr>
+          <td class="muted">{{ i + 1 }}</td>
+          <td>
+            @if (category.image) {
+              <img class="thumb" [src]="category.image" [alt]="category.name" />
+            } @else {
+              <span class="thumb" aria-hidden="true">{{ initials(category.name) }}</span>
+            }
+          </td>
+          <td class="bold">{{ category.name }}</td>
+          <td class="text-right num">{{ category.itemCount }}</td>
+          <td class="text-right num">{{ category.displayOrder }}</td>
+          <td><app-status-tag [status]="category.status" /></td>
+          <td>
+            <div class="row-actions">
+              <p-button
+                icon="pi pi-pencil"
+                [text]="true"
+                [rounded]="true"
+                pTooltip="Edit"
+                tooltipPosition="top"
+                ariaLabel="Edit category"
+                (onClick)="openForm(category)"
+              />
+              <p-button
+                icon="pi pi-trash"
+                severity="danger"
+                [text]="true"
+                [rounded]="true"
+                pTooltip="Delete"
+                tooltipPosition="top"
+                ariaLabel="Delete category"
+                (onClick)="remove(category)"
+              />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template #loadingbody>
+        @for (r of skeletonRows; track r) {
+          <tr appSkeletonRow [cols]="7"></tr>
+        }
+      </ng-template>
+
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="7">
+            @if (error(); as e) {
+              <app-empty-state
+                icon="pi pi-exclamation-triangle"
+                title="Could not load categories"
+                [message]="e"
+                actionLabel="Retry"
+                (action)="load()"
+              />
+            } @else {
+              <app-empty-state
+                icon="pi pi-th-large"
+                title="No categories found"
+                message="Add categories such as Cakes, Breads or Puffs so items can be grouped on the billing screen."
+                actionLabel="Add Category"
+                actionIcon="pi pi-plus"
+                (action)="openForm()"
+              />
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<app-category-form
+  [(visible)]="formVisible"
+  [category]="editing()"
+  [suggestedOrder]="total() + 1"
+  (saved)="load()"
+/>

@@ -1,0 +1,28 @@
+<div class="page-header">
+  <div class="titles">
+    <h1>{{ title() }}</h1>
+    @if (subtitle()) {
+      <p>{{ subtitle() }}</p>
+    }
+  </div>
+  <div class="actions">
+    @if (showSearch()) {
+      <p-iconfield class="search">
+        <p-inputicon styleClass="pi pi-search" />
+        <input
+          pInputText
+          type="search"
+          [placeholder]="searchPlaceholder()"
+          [value]="initialSearch()"
+          (input)="onInput($event)"
+          aria-label="Search"
+        />
+      </p-iconfield>
+    }
+    <ng-content select="[headerActions]" />
+    @if (showAdd()) {
+      <p-button [label]="addLabel()" [icon]="addIcon()" (onClick)="add.emit()" />
+    }
+  </div>
+</div>
+<ng-content />

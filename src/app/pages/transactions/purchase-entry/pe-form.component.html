@@ -1,0 +1,413 @@
+<app-form-dialog
+  [(visible)]="visible"
+  [header]="pe() ? 'Edit Purchase Entry ' + (pe()?.peNo ?? '') : 'New Purchase Entry'"
+  width="1150px"
+  [maximizable]="true"
+>
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+    <div class="form-grid cols-3">
+      <div class="field">
+        <label id="pe-no-label">PE No</label>
+        <div class="readonly-box" aria-labelledby="pe-no-label">
+          @if (pe(); as p) {
+            <code class="code">{{ p.peNo }}</code>
+          } @else {
+            <span class="muted">Auto (generated on save)</span>
+          }
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="pe-date">PE Date <span class="req">*</span></label>
+        <p-datepicker
+          inputId="pe-date"
+          formControlName="peDate"
+          [showIcon]="true"
+          [readonlyInput]="true"
+          [maxDate]="today"
+          dateFormat="dd-mm-yy"
+          placeholder="dd-mm-yyyy"
+        />
+        @if (form.hasError('peDateFuture')) {
+          <small class="error-text" role="alert">PE date cannot be in the future</small>
+        }
+        <app-field-error [control]="form.controls.peDate" label="PE date" />
+      </div>
+
+      <div class="field">
+        <label for="pe-supplier">Supplier <span class="req">*</span></label>
+        <p-select
+          inputId="pe-supplier"
+          formControlName="supplierId"
+          [options]="suppliers()"
+          optionLabel="name"
+          optionValue="id"
+          [filter]="true"
+          filterBy="name,gstin,state"
+          [loading]="lookupsLoading()"
+          placeholder="Select supplier"
+          emptyMessage="No active suppliers — add one in Supplier Master"
+          (onChange)="onSupplierChange()"
+        />
+        <app-field-error [control]="form.controls.supplierId" label="Supplier" />
+        @if (supplier(); as s) {
+          <div class="supplier-info">
+            <span>GSTIN: <strong>{{ s.gstin || 'Unregistered' }}</strong></span>
+            <span>State: <strong>{{ s.state }}</strong></span>
+            <span>Terms: <strong>{{ s.paymentTermsDays }} days</strong></span>
+            <span class="tax-chip">{{ interState() ? 'IGST' : 'CGST + SGST' }}</span>
+          </div>
+        }
+      </div>
+
+      <div class="field">
+        <label for="pe-po">Against PO</label>
+        <p-select
+          inputId="pe-po"
+          formControlName="poId"
+          [options]="poOptions()"
+          optionLabel="label"
+          optionValue="value"
+          [showClear]="true"
+          [loading]="posLoading()"
+          [placeholder]="form.controls.supplierId.value ? 'Optional — open POs' : 'Select a supplier first'"
+          emptyMessage="No open POs for this supplier"
+          (onChange)="onPoChange($event.value)"
+        />
+        <app-field-error [control]="form.controls.poId" label="PO" />
+        @if (selectedPo(); as po) {
+          <small class="hint">Pending items of {{ po.poNo }} are loaded below.</small>
+        }
+      </div>
+
+      <div class="field">
+        <label for="pe-invoice-no">Supplier Invoice No. <span class="req">*</span></label>
+        <input
+          pInputText
+          id="pe-invoice-no"
+          formControlName="invoiceNo"
+          maxlength="30"
+          placeholder="e.g. INV/2026/0412"
+          autocomplete="off"
+        />
+        <app-field-error [control]="form.controls.invoiceNo" label="Invoice no." />
+      </div>
+
+      <div class="field">
+        <label for="pe-invoice-date">Invoice Date <span class="req">*</span></label>
+        <p-datepicker
+          inputId="pe-invoice-date"
+          formControlName="invoiceDate"
+          [showIcon]="true"
+          [readonlyInput]="true"
+          [maxDate]="form.controls.peDate.value ?? today"
+          dateFormat="dd-mm-yy"
+          placeholder="dd-mm-yyyy"
+        />
+        @if (form.hasError('invoiceAfterPe')) {
+          <small class="error-text" role="alert">Invoice date cannot be after the PE date</small>
+        }
+        <app-field-error [control]="form.controls.invoiceDate" label="Invoice date" />
+      </div>
+
+      <div class="field span-all" role="group" aria-labelledby="pe-invoice-copy-label">
+        <label id="pe-invoice-copy-label">Invoice Copy</label>
+        <app-file-picker
+          formControlName="invoiceCopy"
+          accept="application/pdf,image/jpeg,image/png"
+          [maxMb]="5"
+          hint="PDF, JPG or PNG — up to 5 MB"
+        />
+        <app-field-error [control]="form.controls.invoiceCopy" label="Invoice copy" />
+      </div>
+    </div>
+
+    <div class="section-head">
+      <div class="form-section-title">Items received</div>
+      <p-button label="Add Item" icon="pi pi-plus" size="small" [outlined]="true" (onClick)="addLine()" />
+    </div>
+    @if (lines.errors?.['server']; as serverError) {
+      <small class="error-text" role="alert">{{ serverError }}</small>
+    }
+
+    <div class="lines-scroll" [class.as-cards]="layout.isMobile()">
+      <div class="lines pe-lines" formArrayName="items">
+        <div class="line-head" aria-hidden="true">
+          <span>#</span>
+          <span>Item <span class="req">*</span></span>
+          <span>Ordered</span>
+          <span>Received <span class="req">*</span></span>
+          <span>Unit</span>
+          <span>Rate ₹ <span class="req">*</span></span>
+          <span>GST %</span>
+          <span>Expiry</span>
+          <span class="text-right">Amount</span>
+          <span></span>
+        </div>
+
+        @for (line of lines.controls; track line; let i = $index) {
+          @let item = itemMap().get(line.controls.itemId.value);
+          @let ordered = line.controls.orderedQty.value;
+          <div class="line" [formGroupName]="i">
+            <div class="c-no cell-text"><span class="card-only">Item&nbsp;</span>{{ i + 1 }}</div>
+
+            <div class="c-item field">
+              <label class="cell-label" [for]="'pe-item-' + i">Item</label>
+              <p-select
+                [inputId]="'pe-item-' + i"
+                formControlName="itemId"
+                [options]="rowOptions()[i]"
+                optionLabel="name"
+                optionValue="id"
+                [filter]="true"
+                filterBy="name,code"
+                [loading]="lookupsLoading()"
+                placeholder="Select item"
+                emptyMessage="No raw material items"
+                (onChange)="onItemPicked(i, $event.value)"
+              />
+              <app-field-error [control]="line.controls.itemId" label="Item" />
+            </div>
+
+            <div class="cell-text">
+              <span class="cell-label">Ordered</span>
+              <span>{{ ordered === null ? '—' : (ordered | qty) }}</span>
+            </div>
+
+            <div class="field">
+              <label class="cell-label" [for]="'pe-qty-' + i">Received</label>
+              <p-inputnumber
+                [inputId]="'pe-qty-' + i"
+                formControlName="receivedQty"
+                [min]="0"
+                [maxFractionDigits]="item?.allowDecimal ? 3 : 0"
+                placeholder="0"
+                inputStyleClass="w-full"
+              />
+              <app-field-error [control]="line.controls.receivedQty" label="Qty" [messages]="{ min: 'Enter qty > 0' }" />
+              @if (ordered !== null && (line.controls.receivedQty.value ?? 0) > ordered) {
+                <small class="warn-text"><i class="pi pi-exclamation-triangle" aria-hidden="true"></i> More than ordered</small>
+              }
+            </div>
+
+            <div class="c-meta cell-text">
+              <span class="cell-label">Unit</span>
+              <span>{{ item?.unitCode || '—' }}</span>
+            </div>
+
+            <div class="field">
+              <label class="cell-label" [for]="'pe-rate-' + i">Rate ₹</label>
+              <p-inputnumber
+                [inputId]="'pe-rate-' + i"
+                formControlName="rate"
+                mode="currency"
+                currency="INR"
+                locale="en-IN"
+                [min]="0"
+                placeholder="₹0.00"
+                inputStyleClass="w-full"
+              />
+              <app-field-error [control]="line.controls.rate" label="Rate" [messages]="{ min: 'Enter rate > 0' }" />
+            </div>
+
+            <div class="field">
+              <label class="cell-label" [for]="'pe-gst-' + i">GST %</label>
+              <p-select
+                [inputId]="'pe-gst-' + i"
+                formControlName="gstPercent"
+                [options]="gstOptions"
+                optionLabel="label"
+                optionValue="value"
+              />
+            </div>
+
+            <div class="field">
+              <label class="cell-label" [for]="'pe-exp-' + i">Expiry</label>
+              <p-datepicker
+                [inputId]="'pe-exp-' + i"
+                formControlName="expiryDate"
+                [readonlyInput]="true"
+                [showClear]="true"
+                dateFormat="dd-mm-yy"
+                placeholder="Optional"
+              />
+            </div>
+
+            <div class="c-amount cell-text">
+              <span class="cell-label">Amount</span>
+              <span class="bold">{{ totals().lines[i].amount | inr }}</span>
+            </div>
+
+            <div class="c-remove">
+              <p-button
+                icon="pi pi-trash"
+                severity="danger"
+                [text]="true"
+                [rounded]="true"
+                [disabled]="lines.length === 1"
+                pTooltip="Remove row"
+                tooltipPosition="left"
+                [ariaLabel]="'Remove item row ' + (i + 1)"
+                (onClick)="removeLine(i)"
+              />
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="bottom-grid">
+      <div>
+        <div class="form-section-title">Payment</div>
+        <div class="form-grid mt-1">
+          @if (pe(); as existing) {
+            <div class="field">
+              <label id="pe-paid-label">Paid So Far</label>
+              <div class="readonly-box num" aria-labelledby="pe-paid-label">{{ existing.paidAmount | inr }}</div>
+              <small class="hint">Record further payments with “Add Payment” in the list.</small>
+            </div>
+          } @else {
+            <div class="field">
+              <label for="pe-paid">Paid Now ₹</label>
+              <p-inputnumber
+                inputId="pe-paid"
+                formControlName="paidNow"
+                mode="currency"
+                currency="INR"
+                locale="en-IN"
+                [min]="0"
+                [max]="totals().grandTotal"
+              />
+              @if (form.hasError('paidExceeds')) {
+                <small class="error-text" role="alert">Paid amount cannot exceed the grand total</small>
+              } @else {
+                <button type="button" class="link-btn small" style="align-self: flex-start" (click)="payFull()">
+                  Pay full {{ totals().grandTotal | inr }}
+                </button>
+              }
+            </div>
+
+            <div class="field">
+              <label for="pe-mode">
+                Payment Mode
+                @if ((form.controls.paidNow.value ?? 0) > 0) {
+                  <span class="req">*</span>
+                }
+              </label>
+              <p-select
+                inputId="pe-mode"
+                formControlName="paymentMode"
+                [options]="modeOptions"
+                optionLabel="label"
+                optionValue="value"
+                [showClear]="true"
+                placeholder="Select mode"
+              />
+              @if (form.hasError('modeRequired')) {
+                <small class="error-text" role="alert">Select how the payment was made</small>
+              }
+              <app-field-error [control]="form.controls.paymentMode" label="Payment mode" />
+            </div>
+          }
+
+          <div class="field">
+            <label id="pe-balance-label">Balance</label>
+            <div class="readonly-box num" aria-labelledby="pe-balance-label">{{ balance() | inr }}</div>
+          </div>
+
+          <div class="field">
+            <label id="pe-due-label">Due Date</label>
+            <div class="readonly-box" aria-labelledby="pe-due-label">
+              @if (dueDate(); as due) {
+                {{ due | istDate }}
+              } @else {
+                <span class="muted small">Pick supplier &amp; invoice date</span>
+              }
+            </div>
+          </div>
+
+          <div class="field">
+            <label id="pe-status-label">Payment Status</label>
+            <div class="field-inline" aria-labelledby="pe-status-label">
+              <app-status-tag [status]="paymentStatus()" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="totals" aria-live="polite">
+        <div class="kv">
+          <span>Sub Total</span>
+          <span class="num">{{ totals().subTotal | inr }}</span>
+        </div>
+        @if (interState()) {
+          <div class="kv">
+            <span>IGST</span>
+            <span class="num">{{ totals().igst | inr }}</span>
+          </div>
+        } @else {
+          <div class="kv">
+            <span>CGST</span>
+            <span class="num">{{ totals().cgst | inr }}</span>
+          </div>
+          <div class="kv">
+            <span>SGST</span>
+            <span class="num">{{ totals().sgst | inr }}</span>
+          </div>
+        }
+        <div class="kv">
+          <label for="pe-discount">Discount (−)</label>
+          <p-inputnumber
+            inputId="pe-discount"
+            formControlName="discount"
+            mode="currency"
+            currency="INR"
+            locale="en-IN"
+            [min]="0"
+            inputStyleClass="w-full text-right"
+          />
+        </div>
+        @if (form.hasError('discountTooHigh')) {
+          <small class="error-text kv-error" role="alert">Discount cannot exceed the invoice value</small>
+        }
+        <div class="kv">
+          <label for="pe-other">Freight / Other</label>
+          <p-inputnumber
+            inputId="pe-other"
+            formControlName="otherCharges"
+            mode="currency"
+            currency="INR"
+            locale="en-IN"
+            [min]="0"
+            inputStyleClass="w-full text-right"
+          />
+        </div>
+        <div class="kv">
+          <span>Round Off</span>
+          <span class="num">{{ totals().roundOff | inr }}</span>
+        </div>
+        <div class="kv grand">
+          <span>Grand Total</span>
+          <span class="num">{{ totals().grandTotal | inr }}</span>
+        </div>
+        @if (form.hasError('belowPaid')) {
+          <small class="error-text kv-error" role="alert">
+            Grand total cannot be less than the {{ paid() | inr }} already paid
+          </small>
+        }
+      </div>
+    </div>
+    <button type="submit" hidden aria-hidden="true"></button>
+  </form>
+
+  <div dialogFooter class="dialog-footer">
+    <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="visible.set(false)" />
+    <p-button
+      [label]="pe() ? 'Update' : 'Save Entry'"
+      icon="pi pi-check"
+      [loading]="saving()"
+      [disabled]="form.invalid || saving()"
+      (onClick)="save()"
+    />
+  </div>
+</app-form-dialog>

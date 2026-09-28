@@ -1,0 +1,33 @@
+/* Shared by the Salary Setup / Monthly Payment tab components. */
+.tab-toolbar {
+  margin-bottom: 0.75rem;
+
+  .search-filter {
+    max-width: 320px;
+  }
+
+  .search {
+    display: block;
+    width: 100%;
+
+    input {
+      width: 100%;
+    }
+  }
+
+  .toolbar-add {
+    margin-left: auto;
+  }
+}
+
+.table-box {
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.emp-cell {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}

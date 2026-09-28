@@ -1,0 +1,141 @@
+<app-form-dialog
+  [(visible)]="visible"
+  [header]="'Purchase Order ' + (po()?.poNo ?? '')"
+  width="920px"
+  [maximizable]="true"
+>
+  @if (po(); as order) {
+    @if (order.status === 'CANCELLED') {
+      <div class="view-alert">
+        <p-message severity="error" icon="pi pi-ban">
+          Cancelled — {{ order.cancelReason || 'no reason recorded' }}
+        </p-message>
+      </div>
+    }
+
+    <div class="detail-grid">
+      <div class="dl">
+        <span>PO No</span>
+        <span><code class="code">{{ order.poNo }}</code></span>
+      </div>
+      <div class="dl">
+        <span>PO Date</span>
+        <span>{{ order.poDate | istDate }}</span>
+      </div>
+      <div class="dl">
+        <span>Expected Delivery</span>
+        <span>{{ (order.expectedDate | istDate) || '—' }}</span>
+      </div>
+      <div class="dl">
+        <span>Status</span>
+        <span><app-status-tag [status]="order.status" /></span>
+      </div>
+      <div class="dl">
+        <span>Supplier</span>
+        <span>{{ order.supplierName }}</span>
+      </div>
+      <div class="dl">
+        <span>Supplier GSTIN</span>
+        <span>{{ order.supplierGstin || 'Unregistered' }}</span>
+      </div>
+      <div class="dl">
+        <span>Supplier State</span>
+        <span>{{ order.supplierState }}</span>
+      </div>
+      <div class="dl">
+        <span>Tax</span>
+        <span>{{ order.isInterState ? 'IGST (other state)' : 'CGST + SGST (same state)' }}</span>
+      </div>
+    </div>
+
+    <div class="view-table-wrap">
+      <table class="view-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Item</th>
+            <th class="text-right">Qty</th>
+            <th class="text-right">Received</th>
+            <th class="text-right">Rate</th>
+            <th class="text-right">GST %</th>
+            <th class="text-right">GST</th>
+            <th class="text-right">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (line of order.items; track line.itemId; let i = $index) {
+            <tr>
+              <td class="muted">{{ i + 1 }}</td>
+              <td class="bold">{{ line.itemName }}</td>
+              <td class="text-right num">{{ line.qty | qty }} {{ line.unitCode }}</td>
+              <td class="text-right num" [class.yes]="line.receivedQty >= line.qty">
+                {{ line.receivedQty | qty }} {{ line.unitCode }}
+              </td>
+              <td class="text-right num">{{ line.rate | inr }}</td>
+              <td class="text-right num">{{ line.gstPercent }}%</td>
+              <td class="text-right num">{{ line.gstAmount | inr }}</td>
+              <td class="text-right num bold">{{ line.amount | inr }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="bottom-grid">
+      <div class="view-notes">
+        @if (order.notes) {
+          <div class="dl">
+            <span>Notes</span>
+            <span class="note-text">{{ order.notes }}</span>
+          </div>
+        }
+        <div class="muted small">
+          Created {{ order.createdAt | istDateTime }} · Last updated {{ order.updatedAt | istDateTime }}
+        </div>
+      </div>
+
+      <div class="totals">
+        <div class="kv">
+          <span>Sub Total</span>
+          <span class="num">{{ order.subTotal | inr }}</span>
+        </div>
+        @if (order.isInterState) {
+          <div class="kv">
+            <span>IGST</span>
+            <span class="num">{{ order.igst | inr }}</span>
+          </div>
+        } @else {
+          <div class="kv">
+            <span>CGST</span>
+            <span class="num">{{ order.cgst | inr }}</span>
+          </div>
+          <div class="kv">
+            <span>SGST</span>
+            <span class="num">{{ order.sgst | inr }}</span>
+          </div>
+        }
+        <div class="kv">
+          <span>Other Charges</span>
+          <span class="num">{{ order.otherCharges | inr }}</span>
+        </div>
+        <div class="kv">
+          <span>Round Off</span>
+          <span class="num">{{ order.roundOff | inr }}</span>
+        </div>
+        <div class="kv grand">
+          <span>Grand Total</span>
+          <span class="num">{{ order.grandTotal | inr }}</span>
+        </div>
+      </div>
+    </div>
+  }
+
+  <div dialogFooter class="dialog-footer">
+    <p-button label="Close" severity="secondary" [outlined]="true" (onClick)="visible.set(false)" />
+    <p-button label="Print" icon="pi pi-print" severity="secondary" (onClick)="print()" />
+    <p-button label="Share" icon="pi pi-whatsapp" severity="success" [outlined]="true" (onClick)="share()" />
+    @if (canConvert()) {
+      <p-button label="Convert to PE" icon="pi pi-file-import" (onClick)="convert()" />
+    }
+  </div>
+</app-form-dialog>

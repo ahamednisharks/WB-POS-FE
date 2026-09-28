@@ -1,0 +1,193 @@
+.dash {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: opacity 0.2s;
+
+  // Refetch keeps the previous render, dimmed — no skeleton flash or layout jump.
+  &.refreshing {
+    opacity: 0.55;
+    pointer-events: none;
+  }
+
+  @media (max-width: 575px) {
+    gap: 0.75rem;
+  }
+}
+
+.stat-grid {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+
+  @media (max-width: 575px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    .stat-value {
+      font-size: 1.1rem;
+      overflow-wrap: anywhere;
+    }
+  }
+}
+
+.dash-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+
+  @media (max-width: 991px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.stat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  flex: 0 0 auto;
+
+  &.tone-brand {
+    background: var(--brand-soft);
+    color: #8c5c00;
+  }
+  &.tone-upi {
+    background: #e8e7fd;
+    color: #4338ca;
+  }
+  &.tone-card {
+    background: #dcf3f1;
+    color: #0f766e;
+  }
+  &.tone-danger {
+    background: #fde8e8;
+    color: #b91c1c;
+  }
+}
+
+.stat-card.clickable {
+  outline-offset: 2px;
+
+  .go {
+    margin-left: auto;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    transition: transform 0.15s;
+  }
+
+  &:hover .go,
+  &:focus-visible .go {
+    transform: translateX(3px);
+    color: #8c5c00;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--brand);
+  }
+}
+
+.card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.25rem 0.75rem;
+  margin-bottom: 0.5rem;
+
+  .card-title {
+    margin: 0;
+  }
+}
+
+.chart-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.chart-note {
+  margin: -0.25rem 0 0.5rem;
+}
+
+.bar-box {
+  position: relative;
+  height: 280px;
+}
+
+.donut-box {
+  position: relative;
+  height: 210px;
+}
+
+.donut-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+
+  strong {
+    font-size: 1.1rem;
+  }
+}
+
+.legend {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+
+  li {
+    display: grid;
+    grid-template-columns: auto 1fr auto 3.5rem;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.85rem;
+    padding: 0.2rem 0;
+    border-top: 1px solid #f1eee6;
+
+    &:first-child {
+      border-top: none;
+    }
+  }
+
+  .swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+  }
+
+  .legend-value {
+    font-weight: 600;
+  }
+
+  .legend-pct {
+    text-align: right;
+  }
+}
+
+.table-title {
+  padding: 0.9rem 1rem 0.25rem;
+}
+
+.bill-no {
+  font-weight: 600;
+  color: #8c5c00;
+  white-space: nowrap;
+}
+
+.clickable-row:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: -2px;
+}
+
+.sk-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}

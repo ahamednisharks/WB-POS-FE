@@ -1,0 +1,485 @@
+/* ===========================================================
+   WB-POS global styles
+   Ionic core CSS + PrimeIcons are loaded from angular.json.
+   PrimeNG theme (Aura + brand yellow) is injected at runtime.
+   =========================================================== */
+
+:root {
+  --brand: #f5b700;
+  --brand-soft: #fff4c2;
+  --brand-softer: #fffbeb;
+  --brand-ink: #2b2104;
+  --surface-page: #f6f5f1;
+  --surface-card: #ffffff;
+  --border-soft: #e7e3d8;
+  --text-main: #1f2328;
+  --text-muted: #6b6f76;
+  --danger: #dc2626;
+  --success: #16a34a;
+  --radius: 12px;
+  --shadow-card: 0 1px 2px rgba(31, 35, 40, 0.06), 0 1px 3px rgba(31, 35, 40, 0.04);
+
+  --ion-font-family: 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --ion-background-color: var(--surface-page);
+  --ion-text-color: var(--text-main);
+  --ion-toolbar-background: #ffffff;
+  --ion-toolbar-color: var(--text-main);
+  --ion-toolbar-border-color: var(--border-soft);
+
+  --ion-color-primary: #f5b700;
+  --ion-color-primary-rgb: 245, 183, 0;
+  --ion-color-primary-contrast: #2b2104;
+  --ion-color-primary-contrast-rgb: 43, 33, 4;
+  --ion-color-primary-shade: #d8a100;
+  --ion-color-primary-tint: #f6be1a;
+}
+
+html,
+body {
+  font-family: var(--ion-font-family);
+  color: var(--text-main);
+  background: var(--surface-page);
+  font-size: 14px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+a {
+  color: #8c5c00;
+}
+
+/* ---------- page scaffolding ---------- */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  max-width: 1600px;
+  margin: 0 auto;
+  min-height: 100%;
+
+  @media (max-width: 575px) {
+    padding: 0.75rem;
+    gap: 0.75rem;
+  }
+}
+
+.card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: 1rem;
+
+  &.p-0 {
+    padding: 0;
+    overflow: hidden;
+  }
+}
+
+.card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem;
+}
+
+/* ---------- filter bar ---------- */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+
+  .filter {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 170px;
+    flex: 1 1 170px;
+    max-width: 260px;
+
+    label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .p-select,
+    .p-datepicker,
+    .p-inputtext {
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 575px) {
+    .filter {
+      max-width: none;
+    }
+  }
+}
+
+/* ---------- forms ---------- */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem 1.25rem;
+
+  &.cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .span-2 {
+    grid-column: span 2;
+  }
+
+  .span-all {
+    grid-column: 1 / -1;
+  }
+
+  @media (max-width: 767px) {
+    &.cols-3 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 575px) {
+    &,
+    &.cols-3 {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .span-2 {
+      grid-column: auto;
+    }
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+
+  > label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #3a3f45;
+  }
+
+  .p-inputtext,
+  .p-select,
+  .p-inputnumber,
+  .p-datepicker,
+  .p-password,
+  .p-textarea,
+  .p-multiselect {
+    width: 100%;
+  }
+
+  .p-inputnumber-input,
+  .p-datepicker-input,
+  .p-password-input {
+    width: 100%;
+  }
+
+  .hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+}
+
+.field-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 2.5rem;
+
+  label {
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+}
+
+.req {
+  color: var(--danger);
+  margin-left: 2px;
+}
+
+.error-text {
+  color: var(--danger);
+  font-size: 0.78rem;
+  line-height: 1.2;
+}
+
+.warn-text {
+  color: #b45309;
+  font-size: 0.78rem;
+}
+
+.form-section-title {
+  grid-column: 1 / -1;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #8c5c00;
+  border-bottom: 1px dashed var(--border-soft);
+  padding-bottom: 0.35rem;
+  margin-top: 0.25rem;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.readonly-box {
+  background: #f7f6f2;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  padding: 0.55rem 0.75rem;
+  min-height: 2.5rem;
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+}
+
+/* ---------- tables ---------- */
+.p-datatable {
+  .p-datatable-thead > tr > th {
+    background: #faf8f2;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #4b4f55;
+    white-space: nowrap;
+  }
+
+  .p-datatable-tbody > tr > td {
+    font-size: 0.875rem;
+  }
+
+  .p-datatable-tfoot > tr > td {
+    background: #faf8f2;
+    font-weight: 700;
+  }
+}
+
+.row-actions {
+  display: flex;
+  gap: 0.15rem;
+  justify-content: flex-end;
+  white-space: nowrap;
+}
+
+.thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--brand-softer);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #b37800;
+  font-weight: 700;
+  font-size: 0.8rem;
+  border: 1px solid var(--border-soft);
+}
+
+.clickable-row {
+  cursor: pointer;
+}
+
+.code {
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  background: #f4f1e6;
+  color: #5a3d00;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+.yes {
+  color: var(--success);
+  font-weight: 500;
+}
+
+.low-stock {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+/* ---------- stat cards ---------- */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.75rem;
+}
+
+.stat-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: 0.9rem 1rem;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  .stat-label {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .stat-value {
+    font-size: 1.35rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stat-sub {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  &.clickable {
+    cursor: pointer;
+
+    &:hover {
+      border-color: var(--brand);
+    }
+  }
+}
+
+/* ---------- helpers ---------- */
+.text-right {
+  text-align: right !important;
+}
+
+.text-center {
+  text-align: center !important;
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.small {
+  font-size: 0.8rem;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.bold {
+  font-weight: 700;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.flex {
+  display: flex;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.gap-1 {
+  gap: 0.5rem;
+}
+
+.gap-2 {
+  gap: 1rem;
+}
+
+.grow {
+  flex: 1 1 auto;
+}
+
+.wrap {
+  flex-wrap: wrap;
+}
+
+.mt-1 {
+  margin-top: 0.5rem;
+}
+
+.mt-2 {
+  margin-top: 1rem;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: #8c5c00;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  font: inherit;
+}
+
+.info-banner {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  background: var(--brand-softer);
+  border: 1px solid #ffe98a;
+  border-radius: var(--radius);
+  padding: 0.85rem 1rem;
+  color: #5a3d00;
+
+  .pi {
+    font-size: 1.2rem;
+    margin-top: 2px;
+  }
+}
+
+/* Keep PrimeNG overlays above Ionic overlays (Ionic uses 20000+). */
+.p-toast {
+  z-index: 40000 !important;
+}
+
+/* ---------- print ---------- */
+.print-host {
+  display: none;
+}
+
+@media print {
+  html,
+  body {
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  body > *:not(app-root) {
+    display: none !important;
+  }
+
+  app-root > *:not(app-print-host) {
+    display: none !important;
+  }
+
+  .print-host {
+    display: block !important;
+    position: static !important;
+    color: #000;
+  }
+}

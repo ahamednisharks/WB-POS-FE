@@ -1,0 +1,62 @@
+.combo-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.lines-head,
+.combo-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 8rem 7rem 2.5rem;
+  gap: 0.5rem;
+  align-items: start;
+}
+
+.lines-head {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.amount-cell {
+  min-height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  font-weight: 600;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Phones: item on its own line, then qty · amount · remove. */
+@media (max-width: 575px) {
+  .lines-head {
+    display: none;
+  }
+
+  .combo-line {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    padding: 0.6rem;
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    background: var(--brand-softer);
+  }
+
+  .item-cell {
+    grid-column: 1 / -1;
+  }
+
+  .amount-cell {
+    min-width: 5.5rem;
+  }
+}

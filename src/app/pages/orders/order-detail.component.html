@@ -1,0 +1,139 @@
+<div class="page">
+  <div class="top">
+    <p-button icon="pi pi-arrow-left" label="Orders" [text]="true" routerLink="/orders" />
+  </div>
+
+  @if (loading()) {
+    <div class="card">
+      <p-skeleton width="40%" height="1.6rem" />
+      <p-skeleton width="70%" height="1rem" styleClass="mt-1" />
+      <p-skeleton height="12rem" styleClass="mt-2" />
+    </div>
+  } @else if (error(); as e) {
+    <div class="card">
+      <app-empty-state icon="pi pi-exclamation-triangle" title="Could not load the bill" [message]="e" actionLabel="Retry" (action)="load()" />
+    </div>
+  } @else if (bill(); as b) {
+    <div class="card head">
+      <div class="head-main">
+        <div class="title-row">
+          <h1>{{ b.billNo }}</h1>
+          <app-status-tag [status]="b.status" />
+        </div>
+        <div class="meta">
+          <span><i class="pi pi-calendar" aria-hidden="true"></i> {{ b.billDate | istDateTime }}</span>
+          <span><i class="pi pi-user" aria-hidden="true"></i> {{ b.cashierName }}</span>
+          <span>
+            <i class="pi pi-phone" aria-hidden="true"></i>
+            {{ b.customerName || 'Walk-in' }} {{ b.customerMobile }}
+          </span>
+          <span><i class="pi pi-wallet" aria-hidden="true"></i> {{ b.paymentMode ? modeLabel[b.paymentMode] : 'Unpaid' }}</span>
+        </div>
+        @if (b.cancelReason) {
+          <div class="cancel-note"><i class="pi pi-ban" aria-hidden="true"></i> Cancelled: {{ b.cancelReason }}</div>
+        }
+      </div>
+      <div class="head-actions">
+        @if (b.status === 'HELD') {
+          <p-button label="Resume" icon="pi pi-play" (onClick)="resume(b)" />
+        } @else {
+          <p-button label="Reprint" icon="pi pi-print" [outlined]="true" (onClick)="reprint(b)" />
+          <p-button label="Share" icon="pi pi-whatsapp" severity="success" [outlined]="true" (onClick)="shareBill(b)" />
+        }
+        @if (auth.isAdmin() && b.status === 'COMPLETED') {
+          <p-button label="Cancel" icon="pi pi-ban" severity="danger" [outlined]="true" (onClick)="cancelOpen.set(true)" />
+        }
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card p-0 items">
+        <h2 class="card-title pad">Items ({{ b.itemCount }})</h2>
+        <p-table [value]="b.lines" [scrollable]="true" [tableStyle]="{ 'min-width': '44rem' }" size="small">
+          <ng-template #header>
+            <tr>
+              <th>Item</th>
+              <th class="text-right">Qty</th>
+              <th class="text-right">Rate</th>
+              <th class="text-right">Amount</th>
+              <th class="text-right">GST</th>
+              <th class="text-right">Taxable</th>
+              <th class="text-right">GST ₹</th>
+              <th class="text-right">Total</th>
+            </tr>
+          </ng-template>
+          <ng-template #body let-l>
+            <tr>
+              <td>
+                <div class="bold">{{ l.name }}</div>
+                <div class="muted small">
+                  {{ l.kind === 'COMBO' ? 'Combo' : l.code }} · {{ l.priceIncludesGst ? 'incl. GST' : '+ GST' }}
+                </div>
+              </td>
+              <td class="text-right num">{{ l.qty | qty }} {{ l.unitCode }}</td>
+              <td class="text-right num">{{ l.rate | inr }}</td>
+              <td class="text-right num">{{ l.amount | inr }}</td>
+              <td class="text-right num">{{ l.gstPercent }}%</td>
+              <td class="text-right num">{{ l.taxable | inr }}</td>
+              <td class="text-right num">{{ l.gstAmount | inr }}</td>
+              <td class="text-right num bold">{{ l.total | inr }}</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+
+      <div class="side">
+        <div class="card">
+          <h2 class="card-title">Totals</h2>
+          <div class="kv"><span>Sub Total</span><span class="num">{{ b.subTotal | inr }}</span></div>
+          @if (b.discountAmount > 0) {
+            <div class="kv">
+              <span>Discount {{ b.discountType === 'PERCENT' ? '(' + b.discountValue + '%)' : '' }}</span>
+              <span class="num">-{{ b.discountAmount | inr }}</span>
+            </div>
+          }
+          <div class="kv muted"><span>Taxable value</span><span class="num">{{ b.taxableAmount | inr }}</span></div>
+          <div class="kv"><span>CGST</span><span class="num">{{ b.cgst | inr }}</span></div>
+          <div class="kv"><span>SGST</span><span class="num">{{ b.sgst | inr }}</span></div>
+          <div class="kv"><span>Round Off</span><span class="num">{{ b.roundOff | inr }}</span></div>
+          <div class="kv grand"><span>Grand Total</span><span class="num">{{ b.grandTotal | inr }}</span></div>
+        </div>
+
+        <div class="card">
+          <h2 class="card-title">Payments</h2>
+          @for (p of b.payments; track $index) {
+            <div class="kv">
+              <span>{{ modeLabel[p.mode] }} @if (p.reference) { <span class="muted small">(xx{{ p.reference }})</span> }</span>
+              <span class="num">{{ p.amount | inr }}</span>
+            </div>
+          } @empty {
+            <p class="muted small">No payment yet (bill on hold).</p>
+          }
+          @if (b.cashReceived !== null && b.changeReturned !== null) {
+            <div class="kv muted small"><span>Cash received</span><span class="num">{{ b.cashReceived | inr }}</span></div>
+            <div class="kv muted small"><span>Change returned</span><span class="num">{{ b.changeReturned | inr }}</span></div>
+          }
+        </div>
+
+        <div class="card">
+          <h2 class="card-title">Status history</h2>
+          <ol class="timeline">
+            @for (h of b.history; track $index) {
+              <li>
+                <app-status-tag [status]="h.status" />
+                <div>
+                  <div class="small">{{ h.at | istDateTime }} · {{ h.by }}</div>
+                  @if (h.note) {
+                    <div class="muted small">{{ h.note }}</div>
+                  }
+                </div>
+              </li>
+            }
+          </ol>
+        </div>
+      </div>
+    </div>
+
+    <app-cancel-bill-dialog [(visible)]="cancelOpen" [bill]="b" (cancelled)="onCancelled($event)" />
+  }
+</div>

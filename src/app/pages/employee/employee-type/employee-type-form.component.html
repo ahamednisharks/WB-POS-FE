@@ -1,0 +1,61 @@
+<app-form-dialog
+  [(visible)]="visible"
+  [header]="employeeType() ? 'Edit Employee Type' : 'Add Employee Type'"
+  width="560px"
+>
+  <form [formGroup]="form" (ngSubmit)="save()" class="form-grid" novalidate>
+    <div class="field span-all">
+      <label for="et-name">Type Name <span class="req">*</span></label>
+      <input pInputText id="et-name" formControlName="name" placeholder="e.g. Cashier" maxlength="40" />
+      <app-field-error [control]="form.controls.name" label="Type name" />
+    </div>
+
+    <div class="field span-all">
+      <label for="et-desc">Description</label>
+      <textarea
+        pTextarea
+        id="et-desc"
+        formControlName="description"
+        rows="3"
+        maxlength="200"
+        placeholder="What this role does (optional)"
+      ></textarea>
+      <small class="hint">{{ form.controls.description.value.length }}/200</small>
+      <app-field-error [control]="form.controls.description" label="Description" />
+    </div>
+
+    <div class="field">
+      <label for="et-login">Can Login</label>
+      <div class="field-inline">
+        <p-toggleswitch inputId="et-login" formControlName="canLogin" />
+        <span class="muted small">
+          {{ form.controls.canLogin.value ? 'Yes — can be given a POS login' : 'No — no login allowed' }}
+        </span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label id="et-status-label">Status</label>
+      <p-selectbutton
+        [options]="statusOptions"
+        optionLabel="label"
+        optionValue="value"
+        formControlName="status"
+        [allowEmpty]="false"
+        ariaLabelledBy="et-status-label"
+      />
+    </div>
+    <button type="submit" hidden aria-hidden="true"></button>
+  </form>
+
+  <div dialogFooter class="dialog-footer">
+    <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="visible.set(false)" />
+    <p-button
+      label="Save"
+      icon="pi pi-check"
+      [loading]="saving()"
+      [disabled]="form.invalid || saving()"
+      (onClick)="save()"
+    />
+  </div>
+</app-form-dialog>

@@ -1,0 +1,85 @@
+@let b = bill();
+<div class="roll">
+  <div class="center">
+    <div class="shop">{{ shop.name }}</div>
+    <div class="small">{{ shop.address }}</div>
+    <div class="small">Ph: {{ shop.phone }}</div>
+    <div class="small">GSTIN: {{ shop.gstin }}</div>
+  </div>
+
+  @if (duplicate()) {
+    <div class="dup">** DUPLICATE **</div>
+  }
+  @if (b.status === 'CANCELLED') {
+    <div class="dup">** CANCELLED **</div>
+  }
+
+  <div class="rule"></div>
+  <div class="kv"><span>Bill No</span><strong>{{ b.billNo }}</strong></div>
+  <div class="kv"><span>Date</span><span>{{ b.billDate | istDateTime }}</span></div>
+  <div class="kv"><span>Cashier</span><span>{{ b.cashierName }}</span></div>
+  @if (b.customerName || b.customerMobile) {
+    <div class="kv">
+      <span>Customer</span><span>{{ b.customerName }} {{ b.customerMobile }}</span>
+    </div>
+  }
+  <div class="rule"></div>
+
+  <table>
+    <thead>
+      <tr>
+        <th class="l">Item</th>
+        <th>Qty</th>
+        <th>Rate</th>
+        <th>Amt</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (l of b.lines; track $index) {
+        <tr>
+          <td class="l" colspan="4">{{ l.name }} <span class="gst">({{ l.gstPercent }}%)</span></td>
+        </tr>
+        <tr class="nums">
+          <td></td>
+          <td>{{ l.qty | qty }} {{ l.unitCode }}</td>
+          <td>{{ l.rate.toFixed(2) }}</td>
+          <td>{{ l.amount.toFixed(2) }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+
+  <div class="rule"></div>
+  <div class="kv"><span>Sub Total</span><span>{{ b.subTotal | inr }}</span></div>
+  @if (b.discountAmount > 0) {
+    <div class="kv"><span>Discount</span><span>-{{ b.discountAmount | inr }}</span></div>
+  }
+  <div class="kv"><span>Taxable Value</span><span>{{ b.taxableAmount | inr }}</span></div>
+  <div class="kv"><span>CGST</span><span>{{ b.cgst | inr }}</span></div>
+  <div class="kv"><span>SGST</span><span>{{ b.sgst | inr }}</span></div>
+  @if (b.roundOff !== 0) {
+    <div class="kv"><span>Round Off</span><span>{{ b.roundOff | inr }}</span></div>
+  }
+  <div class="rule"></div>
+  <div class="kv total"><span>TOTAL</span><span>{{ b.grandTotal | inr }}</span></div>
+  <div class="rule"></div>
+
+  @if (b.payments.length) {
+    @for (p of b.payments; track $index) {
+      <div class="kv">
+        <span>Paid by {{ modeLabel[p.mode] }}@if (p.reference) { (xx{{ p.reference }})}</span>
+        <span>{{ p.amount | inr }}</span>
+      </div>
+    }
+    @if (b.cashReceived !== null && b.changeReturned !== null) {
+      <div class="kv"><span>Cash received</span><span>{{ b.cashReceived | inr }}</span></div>
+      <div class="kv"><span>Change</span><span>{{ b.changeReturned | inr }}</span></div>
+    }
+  } @else {
+    <div class="center small">Payment pending (bill on hold)</div>
+  }
+
+  <div class="rule"></div>
+  <div class="center thanks">Thank you, visit again!</div>
+  <div class="center small">{{ shop.tagline }}</div>
+</div>

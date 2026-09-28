@@ -1,0 +1,49 @@
+<ng-template #body><ng-content /></ng-template>
+<ng-template #foot><ng-content select="[dialogFooter]" /></ng-template>
+
+@if (layout.isMobile()) {
+  <ion-modal [isOpen]="visible()" (didDismiss)="onModalDismiss()" class="form-modal">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-buttons slot="start">
+            <ion-button (click)="close()" aria-label="Close">
+              <i class="pi pi-arrow-left" aria-hidden="true"></i>
+            </ion-button>
+          </ion-buttons>
+          <ion-title>{{ header() }}</ion-title>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content class="ion-padding">
+        <ng-container [ngTemplateOutlet]="body" />
+      </ion-content>
+      <ion-footer>
+        <ion-toolbar class="form-modal-footer">
+          <ng-container [ngTemplateOutlet]="foot" />
+        </ion-toolbar>
+      </ion-footer>
+    </ng-template>
+  </ion-modal>
+} @else {
+  <p-dialog
+    [header]="header()"
+    [visible]="visible()"
+    (visibleChange)="onDialogVisibleChange($event)"
+    (onHide)="closed.emit()"
+    [modal]="true"
+    appendTo="body"
+    [style]="{ width: width() }"
+    [breakpoints]="{ '991px': '94vw' }"
+    [draggable]="false"
+    [resizable]="false"
+    [maximizable]="maximizable()"
+    [closeOnEscape]="true"
+    [dismissableMask]="false"
+    [contentStyle]="{ 'max-height': '74vh' }"
+  >
+    <ng-container [ngTemplateOutlet]="body" />
+    <ng-template #footer>
+      <ng-container [ngTemplateOutlet]="foot" />
+    </ng-template>
+  </p-dialog>
+}

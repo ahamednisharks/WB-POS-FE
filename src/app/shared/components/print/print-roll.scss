@@ -1,0 +1,83 @@
+/* 80mm thermal roll layout (≈72mm printable). */
+.roll {
+  width: 72mm;
+  margin: 0 auto;
+  font-family: 'Courier New', ui-monospace, monospace;
+  font-size: 11px;
+  line-height: 1.35;
+  color: #000;
+}
+
+.center {
+  text-align: center;
+}
+
+.shop {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.small {
+  font-size: 10px;
+}
+
+.dup {
+  text-align: center;
+  font-weight: 700;
+  margin: 4px 0;
+}
+
+.rule {
+  border-top: 1px dashed #000;
+  margin: 5px 0;
+}
+
+.kv {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+
+  span:last-child,
+  strong:last-child {
+    text-align: right;
+  }
+}
+
+.total {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.diff {
+  font-weight: 700;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    text-align: right;
+    padding: 1px 0;
+    font-size: 11px;
+  }
+
+  th {
+    border-bottom: 1px dashed #000;
+  }
+
+  .l {
+    text-align: left;
+  }
+
+  .gst {
+    font-size: 9px;
+  }
+}
+
+.thanks {
+  font-weight: 700;
+  margin-top: 4px;
+}

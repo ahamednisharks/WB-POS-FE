@@ -1,0 +1,266 @@
+<app-form-dialog
+  [(visible)]="visible"
+  [header]="employee() ? 'Edit Employee' : 'Add Employee'"
+  width="860px"
+  [maximizable]="true"
+>
+  <form [formGroup]="form" (ngSubmit)="save()" class="form-grid" novalidate>
+    <!-- ======================= Basic ======================= -->
+    <div class="form-section-title">Basic</div>
+
+    <div class="field">
+      <label id="emp-code-label">Employee ID</label>
+      <div class="readonly-box" aria-labelledby="emp-code-label">
+        @if (employee(); as e) {
+          <span class="code">{{ e.empCode }}</span>
+        } @else {
+          <span class="muted">Auto (generated on save)</span>
+        }
+      </div>
+    </div>
+
+    <div class="field">
+      <label id="emp-photo-label">Photo</label>
+      <app-image-picker aria-labelledby="emp-photo-label" formControlName="photo" [maxMb]="1" [round]="true" hint="JPG or PNG, up to 1 MB" />
+    </div>
+
+    <div class="field">
+      <label for="emp-name">Full Name <span class="req">*</span></label>
+      <input pInputText id="emp-name" formControlName="fullName" placeholder="e.g. Ahamed Nishar" maxlength="80" />
+      <app-field-error [control]="form.controls.fullName" label="Full name" />
+    </div>
+
+    <div class="field">
+      <label for="emp-type">Employee Type <span class="req">*</span></label>
+      <p-select
+        inputId="emp-type"
+        formControlName="employeeTypeId"
+        [options]="typeOptions()"
+        optionLabel="label"
+        optionValue="value"
+        [filter]="true"
+        filterBy="label"
+        [loading]="typesLoading()"
+        placeholder="Select type"
+        appendTo="body"
+      />
+      <app-field-error [control]="form.controls.employeeTypeId" label="Employee type" />
+    </div>
+
+    <div class="field">
+      <label id="emp-gender-label">Gender <span class="req">*</span></label>
+      <div class="field-inline wrap" role="radiogroup" aria-labelledby="emp-gender-label">
+        @for (g of genderOptions; track g.value) {
+          <span class="flex items-center gap-1">
+            <p-radiobutton [inputId]="'emp-gender-' + g.value" name="gender" [value]="g.value" formControlName="gender" />
+            <label [for]="'emp-gender-' + g.value">{{ g.label }}</label>
+          </span>
+        }
+      </div>
+      <app-field-error [control]="form.controls.gender" label="Gender" />
+    </div>
+
+    <div class="field">
+      <label for="emp-dob">Date of Birth</label>
+      <p-datepicker
+        inputId="emp-dob"
+        formControlName="dob"
+        dateFormat="dd-mm-yy"
+        [showIcon]="true"
+        [maxDate]="dobMax"
+        [showClear]="true"
+        placeholder="dd-mm-yyyy"
+        appendTo="body"
+      />
+      <app-field-error
+        [control]="form.controls.dob"
+        label="Date of birth"
+        [messages]="{ minAge: 'Employee must be at least 18 years old' }"
+      />
+    </div>
+
+    <!-- ======================= Contact ======================= -->
+    <div class="form-section-title">Contact</div>
+
+    <div class="field">
+      <label for="emp-mobile">Mobile <span class="req">*</span></label>
+      <input
+        pInputText
+        id="emp-mobile"
+        formControlName="mobile"
+        inputmode="numeric"
+        maxlength="10"
+        placeholder="10-digit mobile"
+      />
+      <app-field-error [control]="form.controls.mobile" label="Mobile" [messages]="{ pattern: 'Enter a valid 10-digit mobile number' }" />
+    </div>
+
+    <div class="field">
+      <label for="emp-alt">Alternate Mobile</label>
+      <input pInputText id="emp-alt" formControlName="altMobile" inputmode="numeric" maxlength="10" placeholder="Optional" />
+      <app-field-error
+        [control]="form.controls.altMobile"
+        label="Alternate mobile"
+        [messages]="{ pattern: 'Enter a valid 10-digit mobile number' }"
+      />
+    </div>
+
+    <div class="field">
+      <label for="emp-email">Email</label>
+      <input pInputText id="emp-email" type="email" formControlName="email" placeholder="Optional" maxlength="100" />
+      <app-field-error [control]="form.controls.email" label="Email" />
+    </div>
+
+    <div class="field">
+      <label for="emp-em-name">Emergency Contact Name</label>
+      <input pInputText id="emp-em-name" formControlName="emergencyName" placeholder="Optional" maxlength="80" />
+      <app-field-error [control]="form.controls.emergencyName" label="Emergency contact name" />
+    </div>
+
+    <div class="field">
+      <label for="emp-em-mobile">Emergency Contact No.</label>
+      <input
+        pInputText
+        id="emp-em-mobile"
+        formControlName="emergencyMobile"
+        inputmode="numeric"
+        maxlength="10"
+        placeholder="Optional"
+      />
+      <app-field-error
+        [control]="form.controls.emergencyMobile"
+        label="Emergency contact"
+        [messages]="{ pattern: 'Enter a valid 10-digit mobile number' }"
+      />
+    </div>
+
+    <div class="field span-all">
+      <label for="emp-address">Address <span class="req">*</span></label>
+      <textarea pTextarea id="emp-address" formControlName="address" rows="2" maxlength="250" placeholder="House, street, area, city"></textarea>
+      <app-field-error [control]="form.controls.address" label="Address" />
+    </div>
+
+    <!-- ======================= Identity & Bank ======================= -->
+    <div class="form-section-title">Identity &amp; Bank</div>
+
+    <div class="field">
+      <label for="emp-aadhaar">Aadhaar No.</label>
+      <input
+        pInputText
+        id="emp-aadhaar"
+        formControlName="aadhaar"
+        inputmode="numeric"
+        maxlength="12"
+        placeholder="12-digit Aadhaar"
+        autocomplete="off"
+      />
+      @if (form.controls.aadhaar.value && form.controls.aadhaar.valid) {
+        <small class="hint">Displayed as <span class="code">{{ form.controls.aadhaar.value | aadhaarMask }}</span></small>
+      }
+      <app-field-error [control]="form.controls.aadhaar" label="Aadhaar" [messages]="{ pattern: 'Aadhaar must be 12 digits' }" />
+    </div>
+
+    <div class="field">
+      <label id="emp-idproof-label">ID Proof</label>
+      <app-file-picker
+        aria-labelledby="emp-idproof-label"
+        formControlName="idProof"
+        accept="application/pdf,image/jpeg"
+        [maxMb]="2"
+        hint="PDF or JPG, up to 2 MB"
+      />
+      <app-field-error [control]="form.controls.idProof" label="ID proof" />
+    </div>
+
+    <div class="field">
+      <label for="emp-bank">Bank Account No.</label>
+      <input pInputText id="emp-bank" formControlName="bankAccount" inputmode="numeric" maxlength="18" placeholder="Optional" />
+      <app-field-error
+        [control]="form.controls.bankAccount"
+        label="Account number"
+        [messages]="{ pattern: 'Account number must be 9 to 18 digits' }"
+      />
+    </div>
+
+    <div class="field">
+      <label for="emp-ifsc">IFSC</label>
+      <input
+        pInputText
+        id="emp-ifsc"
+        formControlName="ifsc"
+        maxlength="11"
+        placeholder="e.g. SBIN0001234"
+        style="text-transform: uppercase"
+        autocomplete="off"
+      />
+      <app-field-error [control]="form.controls.ifsc" label="IFSC" [messages]="{ pattern: 'Enter a valid IFSC, e.g. SBIN0001234' }" />
+    </div>
+
+    <!-- ======================= Employment ======================= -->
+    <div class="form-section-title">Employment</div>
+
+    <div class="field">
+      <label for="emp-joining">Joining Date <span class="req">*</span></label>
+      <p-datepicker
+        inputId="emp-joining"
+        formControlName="joiningDate"
+        dateFormat="dd-mm-yy"
+        [showIcon]="true"
+        [maxDate]="today"
+        placeholder="dd-mm-yyyy"
+        appendTo="body"
+      />
+      <app-field-error
+        [control]="form.controls.joiningDate"
+        label="Joining date"
+        [messages]="{ future: 'Joining date cannot be in the future' }"
+      />
+    </div>
+
+    <div class="field">
+      <label for="emp-status">Status <span class="req">*</span></label>
+      <p-select
+        inputId="emp-status"
+        formControlName="status"
+        [options]="statusOptions"
+        optionLabel="label"
+        optionValue="value"
+        appendTo="body"
+      />
+    </div>
+
+    @if (resigned) {
+      <div class="field">
+        <label for="emp-resign">Resign Date <span class="req">*</span></label>
+        <p-datepicker
+          inputId="emp-resign"
+          formControlName="resignDate"
+          dateFormat="dd-mm-yy"
+          [showIcon]="true"
+          [minDate]="form.controls.joiningDate.value"
+          [maxDate]="today"
+          placeholder="dd-mm-yyyy"
+          appendTo="body"
+        />
+        <app-field-error
+          [control]="form.controls.resignDate"
+          label="Resign date"
+          [messages]="{ beforeJoining: 'Resign date cannot be before the joining date', future: 'Resign date cannot be in the future' }"
+        />
+        <small class="hint">A resigned employee's login is blocked automatically.</small>
+      </div>
+    }
+    <button type="submit" hidden aria-hidden="true"></button>
+  </form>
+
+  <div dialogFooter class="dialog-footer">
+    <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="visible.set(false)" />
+    <p-button
+      label="Save"
+      icon="pi pi-check"
+      [loading]="saving()"
+      [disabled]="form.invalid || saving()"
+      (onClick)="save()"
+    />
+  </div>
+</app-form-dialog>

@@ -1,0 +1,258 @@
+<app-form-dialog
+  [(visible)]="visible"
+  [header]="po() ? 'Edit Purchase Order ' + (po()?.poNo ?? '') : 'New Purchase Order'"
+  width="1100px"
+  [maximizable]="true"
+>
+  <form [formGroup]="form" (ngSubmit)="save('DRAFT')" novalidate>
+    <div class="form-grid cols-3">
+      <div class="field">
+        <label id="po-no-label">PO No</label>
+        <div class="readonly-box" aria-labelledby="po-no-label">
+          @if (po(); as p) {
+            <code class="code">{{ p.poNo }}</code>
+          } @else {
+            <span class="muted">Auto (generated on save)</span>
+          }
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="po-date">PO Date <span class="req">*</span></label>
+        <p-datepicker
+          inputId="po-date"
+          formControlName="poDate"
+          [showIcon]="true"
+          [readonlyInput]="true"
+          dateFormat="dd-mm-yy"
+          placeholder="dd-mm-yyyy"
+        />
+        <app-field-error [control]="form.controls.poDate" label="PO date" />
+      </div>
+
+      <div class="field">
+        <label for="po-expected">Expected Delivery Date</label>
+        <p-datepicker
+          inputId="po-expected"
+          formControlName="expectedDate"
+          [showIcon]="true"
+          [showClear]="true"
+          [readonlyInput]="true"
+          [minDate]="form.controls.poDate.value"
+          dateFormat="dd-mm-yy"
+          placeholder="Optional"
+        />
+        @if (form.hasError('expectedBeforePo')) {
+          <small class="error-text" role="alert">Expected date cannot be before the PO date</small>
+        }
+        <app-field-error [control]="form.controls.expectedDate" label="Expected date" />
+      </div>
+
+      <div class="field span-2">
+        <label for="po-supplier">Supplier <span class="req">*</span></label>
+        <p-select
+          inputId="po-supplier"
+          formControlName="supplierId"
+          [options]="suppliers()"
+          optionLabel="name"
+          optionValue="id"
+          [filter]="true"
+          filterBy="name,gstin,state"
+          [loading]="lookupsLoading()"
+          placeholder="Select supplier"
+          emptyMessage="No active suppliers — add one in Supplier Master"
+        />
+        <app-field-error [control]="form.controls.supplierId" label="Supplier" />
+        @if (supplier(); as s) {
+          <div class="supplier-info">
+            <span>GSTIN: <strong>{{ s.gstin || 'Unregistered' }}</strong></span>
+            <span>State: <strong>{{ s.state }}</strong></span>
+            <span class="tax-chip">{{ interState() ? 'IGST — other state' : 'CGST + SGST — same state' }}</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="section-head">
+      <div class="form-section-title">Items</div>
+      <p-button label="Add Item" icon="pi pi-plus" size="small" [outlined]="true" (onClick)="addLine()" />
+    </div>
+    @if (lines.errors?.['server']; as serverError) {
+      <small class="error-text" role="alert">{{ serverError }}</small>
+    }
+
+    <div class="lines-scroll" [class.as-cards]="layout.isMobile()">
+      <div class="lines po-lines" formArrayName="items">
+        <div class="line-head" aria-hidden="true">
+          <span>#</span>
+          <span>Item <span class="req">*</span></span>
+          <span>Unit</span>
+          <span>Qty <span class="req">*</span></span>
+          <span>Rate ₹ <span class="req">*</span></span>
+          <span>GST %</span>
+          <span class="text-right">Amount</span>
+          <span></span>
+        </div>
+
+        @for (line of lines.controls; track line; let i = $index) {
+          @let item = itemMap().get(line.controls.itemId.value);
+          <div class="line" [formGroupName]="i">
+            <div class="c-no cell-text"><span class="card-only">Item&nbsp;</span>{{ i + 1 }}</div>
+
+            <div class="c-item field">
+              <label class="cell-label" [for]="'po-item-' + i">Item</label>
+              <p-select
+                [inputId]="'po-item-' + i"
+                formControlName="itemId"
+                [options]="rowOptions()[i]"
+                optionLabel="name"
+                optionValue="id"
+                [filter]="true"
+                filterBy="name,code"
+                [loading]="lookupsLoading()"
+                placeholder="Select item"
+                emptyMessage="No raw material items"
+                (onChange)="onItemPicked(i, $event.value)"
+              />
+              <app-field-error [control]="line.controls.itemId" label="Item" />
+            </div>
+
+            <div class="c-meta cell-text">
+              <span class="cell-label">Unit</span>
+              <span>{{ item?.unitCode || '—' }}</span>
+            </div>
+
+            <div class="field">
+              <label class="cell-label" [for]="'po-qty-' + i">Qty</label>
+              <p-inputnumber
+                [inputId]="'po-qty-' + i"
+                formControlName="qty"
+                [min]="0"
+                [maxFractionDigits]="item?.allowDecimal ? 3 : 0"
+                placeholder="0"
+                inputStyleClass="w-full"
+              />
+              <app-field-error [control]="line.controls.qty" label="Qty" [messages]="{ min: 'Enter qty > 0' }" />
+            </div>
+
+            <div class="field">
+              <label class="cell-label" [for]="'po-rate-' + i">Rate ₹</label>
+              <p-inputnumber
+                [inputId]="'po-rate-' + i"
+                formControlName="rate"
+                mode="currency"
+                currency="INR"
+                locale="en-IN"
+                [min]="0"
+                placeholder="₹0.00"
+                inputStyleClass="w-full"
+              />
+              <app-field-error [control]="line.controls.rate" label="Rate" [messages]="{ min: 'Enter rate > 0' }" />
+            </div>
+
+            <div class="c-meta cell-text">
+              <span class="cell-label">GST</span>
+              <span>{{ line.controls.gstPercent.value }}%</span>
+            </div>
+
+            <div class="c-amount cell-text">
+              <span class="cell-label">Amount</span>
+              <span class="bold">{{ totals().lines[i].amount | inr }}</span>
+            </div>
+
+            <div class="c-remove">
+              <p-button
+                icon="pi pi-trash"
+                severity="danger"
+                [text]="true"
+                [rounded]="true"
+                [disabled]="lines.length === 1"
+                pTooltip="Remove row"
+                tooltipPosition="left"
+                [ariaLabel]="'Remove item row ' + (i + 1)"
+                (onClick)="removeLine(i)"
+              />
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="bottom-grid">
+      <div class="field">
+        <label for="po-notes">Notes</label>
+        <textarea
+          pTextarea
+          id="po-notes"
+          formControlName="notes"
+          rows="4"
+          maxlength="500"
+          placeholder="Delivery instructions, payment terms …"
+        ></textarea>
+        <app-field-error [control]="form.controls.notes" label="Notes" />
+      </div>
+
+      <div class="totals" aria-live="polite">
+        <div class="kv">
+          <span>Sub Total</span>
+          <span class="num">{{ totals().subTotal | inr }}</span>
+        </div>
+        @if (interState()) {
+          <div class="kv">
+            <span>IGST</span>
+            <span class="num">{{ totals().igst | inr }}</span>
+          </div>
+        } @else {
+          <div class="kv">
+            <span>CGST</span>
+            <span class="num">{{ totals().cgst | inr }}</span>
+          </div>
+          <div class="kv">
+            <span>SGST</span>
+            <span class="num">{{ totals().sgst | inr }}</span>
+          </div>
+        }
+        <div class="kv">
+          <label for="po-other">Other Charges</label>
+          <p-inputnumber
+            inputId="po-other"
+            formControlName="otherCharges"
+            mode="currency"
+            currency="INR"
+            locale="en-IN"
+            [min]="0"
+            inputStyleClass="w-full text-right"
+          />
+        </div>
+        <div class="kv">
+          <span>Round Off</span>
+          <span class="num">{{ totals().roundOff | inr }}</span>
+        </div>
+        <div class="kv grand">
+          <span>Grand Total</span>
+          <span class="num">{{ totals().grandTotal | inr }}</span>
+        </div>
+      </div>
+    </div>
+    <button type="submit" hidden aria-hidden="true"></button>
+  </form>
+
+  <div dialogFooter class="dialog-footer">
+    <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="visible.set(false)" />
+    <p-button
+      label="Save as Draft"
+      icon="pi pi-save"
+      severity="secondary"
+      [loading]="savingAs() === 'DRAFT'"
+      [disabled]="form.invalid || !!savingAs()"
+      (onClick)="save('DRAFT')"
+    />
+    <p-button
+      label="Save & Send"
+      icon="pi pi-send"
+      [loading]="savingAs() === 'SENT'"
+      [disabled]="form.invalid || !!savingAs()"
+      (onClick)="save('SENT')"
+    />
+  </div>
+</app-form-dialog>

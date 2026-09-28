@@ -1,0 +1,163 @@
+<div class="page">
+  <app-page-header
+    title="Orders"
+    [subtitle]="auth.isAdmin() ? 'All bills — view, reprint, share or cancel' : 'Your bills — view, reprint or share'"
+    searchPlaceholder="Bill no. or customer mobile"
+    addLabel="New Bill"
+    (search)="onSearch($event)"
+    addIcon="pi pi-calculator"
+    (add)="newBill()"
+  >
+    <div class="filter-bar">
+      <app-date-range-filter [(preset)]="preset" [range]="range()" (changed)="onRange($event)" />
+      <div class="filter">
+        <label for="ord-status">Status</label>
+        <p-select
+          inputId="ord-status"
+          [options]="statusOptions"
+          optionLabel="label"
+          optionValue="value"
+          [(ngModel)]="status"
+          (onChange)="applyFilters()"
+        />
+      </div>
+      @if (auth.isAdmin()) {
+        <div class="filter">
+          <label for="ord-cashier">Cashier</label>
+          <p-select
+            inputId="ord-cashier"
+            [options]="cashierOptions()"
+            optionLabel="label"
+            optionValue="value"
+            [(ngModel)]="cashierId"
+            [showClear]="true"
+            placeholder="All cashiers"
+            (onChange)="applyFilters()"
+          />
+        </div>
+      }
+      <div class="filter">
+        <label for="ord-mode">Payment Mode</label>
+        <p-select
+          inputId="ord-mode"
+          [options]="modeOptions"
+          optionLabel="label"
+          optionValue="value"
+          [(ngModel)]="paymentMode"
+          (onChange)="applyFilters()"
+        />
+      </div>
+    </div>
+  </app-page-header>
+
+  <div class="card p-0">
+    <p-table
+      [value]="loading() ? [] : rows()"
+      [lazy]="true"
+      (onLazyLoad)="onLazyLoad($event)"
+      [paginator]="true"
+      [rows]="pageSize()"
+      [first]="first()"
+      [totalRecords]="total()"
+      [rowsPerPageOptions]="pageSizeOptions"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="{first}–{last} of {totalRecords}"
+      [loading]="loading()"
+      [showLoader]="false"
+      sortField="billDate"
+      [sortOrder]="-1"
+      dataKey="id"
+      [scrollable]="true"
+      [rowHover]="true"
+      [tableStyle]="{ 'min-width': '64rem' }"
+    >
+      <ng-template #header>
+        <tr>
+          <th pSortableColumn="billNo">Bill No <p-sortIcon field="billNo" /></th>
+          <th pSortableColumn="billDate">Date / Time <p-sortIcon field="billDate" /></th>
+          <th>Customer</th>
+          <th pSortableColumn="itemCount" class="text-right">Items <p-sortIcon field="itemCount" /></th>
+          <th pSortableColumn="grandTotal" class="text-right">Grand Total <p-sortIcon field="grandTotal" /></th>
+          <th>Payment</th>
+          <th pSortableColumn="cashierName">Cashier <p-sortIcon field="cashierName" /></th>
+          <th pSortableColumn="status">Status <p-sortIcon field="status" /></th>
+          <th class="text-right" style="width: 12rem">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-bill>
+        <tr class="clickable-row" (click)="view(bill)">
+          <td><span class="code">{{ bill.billNo }}</span></td>
+          <td class="nowrap">{{ bill.billDate | istDateTime }}</td>
+          <td>
+            @if (bill.customerName || bill.customerMobile) {
+              <div>{{ bill.customerName || '—' }}</div>
+              <div class="muted small">{{ bill.customerMobile }}</div>
+            } @else {
+              <span class="muted">Walk-in</span>
+            }
+          </td>
+          <td class="text-right num">{{ bill.itemCount }}</td>
+          <td class="text-right num bold">{{ bill.grandTotal | inr }}</td>
+          <td>{{ bill.paymentMode ? modeLabel[bill.paymentMode] : '—' }}</td>
+          <td>{{ bill.cashierName }}</td>
+          <td><app-status-tag [status]="bill.status" /></td>
+          <td (click)="$event.stopPropagation()">
+            <div class="row-actions">
+              <p-button icon="pi pi-eye" [text]="true" [rounded]="true" pTooltip="View" ariaLabel="View bill" (onClick)="view(bill)" />
+              @if (bill.status === 'HELD') {
+                <p-button icon="pi pi-play" [text]="true" [rounded]="true" pTooltip="Resume" ariaLabel="Resume bill" (onClick)="resume(bill)" />
+              } @else {
+                <p-button icon="pi pi-print" [text]="true" [rounded]="true" pTooltip="Reprint (duplicate)" ariaLabel="Reprint bill" (onClick)="reprint(bill)" />
+                <p-button
+                  icon="pi pi-whatsapp"
+                  [text]="true"
+                  [rounded]="true"
+                  severity="success"
+                  pTooltip="Share on WhatsApp"
+                  ariaLabel="Share bill"
+                  (onClick)="shareBill(bill)"
+                />
+              }
+              @if (auth.isAdmin() && bill.status === 'COMPLETED') {
+                <p-button
+                  icon="pi pi-ban"
+                  [text]="true"
+                  [rounded]="true"
+                  severity="danger"
+                  pTooltip="Cancel bill"
+                  ariaLabel="Cancel bill"
+                  (onClick)="openCancel(bill)"
+                />
+              }
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template #loadingbody>
+        @for (r of skeletonRows; track r) {
+          <tr appSkeletonRow [cols]="9"></tr>
+        }
+      </ng-template>
+
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="9">
+            @if (error(); as e) {
+              <app-empty-state icon="pi pi-exclamation-triangle" title="Could not load orders" [message]="e" actionLabel="Retry" (action)="load()" />
+            } @else {
+              <app-empty-state
+                icon="pi pi-receipt"
+                title="No bills found"
+                message="No bills match these filters. Try another period or status."
+              />
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<app-cancel-bill-dialog [(visible)]="cancelOpen" [bill]="cancelling()" (cancelled)="load()" />

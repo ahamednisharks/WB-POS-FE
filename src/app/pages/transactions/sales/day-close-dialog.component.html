@@ -1,0 +1,168 @@
+<app-form-dialog [(visible)]="visible" header="Day Close" width="520px">
+  <p class="intro muted small">
+    <i class="pi pi-calendar" aria-hidden="true"></i>
+    {{ date() | istDate }} ·
+    {{
+      isAdmin()
+        ? 'Cash figures include all cashiers'
+        : 'Cash figures are from your transactions today'
+    }}
+  </p>
+
+  @if (summaryError(); as e) {
+    <div class="load-error">
+      <p-message severity="error" [text]="'Could not load the cash figures for today. ' + e" />
+      <p-button
+        label="Retry"
+        icon="pi pi-refresh"
+        size="small"
+        [outlined]="true"
+        (onClick)="loadSummary()"
+      />
+    </div>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="save()" class="form-grid" novalidate>
+    <div class="field">
+      <label for="dc-opening">Opening Cash ₹</label>
+      <p-inputnumber
+        inputId="dc-opening"
+        formControlName="openingCash"
+        mode="currency"
+        currency="INR"
+        locale="en-IN"
+        [min]="0"
+        [maxFractionDigits]="2"
+      />
+      <app-field-error [control]="form.controls.openingCash" label="Opening cash" />
+    </div>
+
+    <div class="field">
+      <span class="field-label" id="dc-sales-label">Cash Sales <span class="auto">auto</span></span>
+      <div class="readonly-box num" aria-labelledby="dc-sales-label">
+        @if (summary(); as s) {
+          {{ s.cash | inr }}
+        } @else {
+          <p-skeleton width="6rem" height="1rem" />
+        }
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="field-label" id="dc-refunds-label"
+        >Cash Refunds <span class="auto">auto</span></span
+      >
+      <div class="readonly-box num" aria-labelledby="dc-refunds-label">
+        @if (summary(); as s) {
+          {{ s.cashRefunds > 0 ? '−' : '' }}{{ s.cashRefunds | inr }}
+        } @else {
+          <p-skeleton width="5rem" height="1rem" />
+        }
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="field-label" id="dc-outs-label">Cash-outs <span class="auto">auto</span></span>
+      <div class="readonly-box num" aria-labelledby="dc-outs-label">
+        @if (summary(); as s) {
+          {{ s.cashOuts > 0 ? '−' : '' }}{{ s.cashOuts | inr }}
+        } @else {
+          <p-skeleton width="5rem" height="1rem" />
+        }
+      </div>
+    </div>
+
+    <div class="field span-all">
+      <span class="field-label" id="dc-expected-label"
+        >Expected Cash <span class="auto">auto</span></span
+      >
+      <div class="readonly-box num expected" aria-labelledby="dc-expected-label">
+        @if (expected() !== null) {
+          {{ expected() | inr }}
+        } @else {
+          <p-skeleton width="7rem" height="1.1rem" />
+        }
+      </div>
+      <span class="hint">Opening cash + cash sales − cash refunds − cash-outs</span>
+    </div>
+
+    <div class="field">
+      <label for="dc-counted">Counted Cash ₹ <span class="req">*</span></label>
+      <p-inputnumber
+        inputId="dc-counted"
+        formControlName="countedCash"
+        mode="currency"
+        currency="INR"
+        locale="en-IN"
+        [min]="0"
+        [maxFractionDigits]="2"
+        placeholder="Cash in the drawer"
+      />
+      <app-field-error [control]="form.controls.countedCash" label="Counted cash" />
+    </div>
+
+    <div class="field">
+      <span class="field-label" id="dc-diff-label">Difference <span class="auto">auto</span></span>
+      @let diff = difference();
+      <div
+        class="readonly-box num diff"
+        [class.diff-ok]="diff === 0"
+        [class.diff-bad]="diff !== null && diff !== 0"
+        aria-labelledby="dc-diff-label"
+        aria-live="polite"
+      >
+        @if (diff === null) {
+          <span class="muted">Enter counted cash</span>
+        } @else if (diff === 0) {
+          <i class="pi pi-check-circle" aria-hidden="true"></i> {{ 0 | inr }} · Tallied
+        } @else {
+          <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+          {{ diff > 0 ? '+' : '' }}{{ diff | inr }} · {{ diff > 0 ? 'Excess' : 'Short' }}
+        }
+      </div>
+    </div>
+
+    <div class="field span-all">
+      <label for="dc-remarks">
+        Remarks
+        @if (remarksRequired()) {
+          <span class="req">*</span>
+        }
+      </label>
+      <textarea
+        pTextarea
+        id="dc-remarks"
+        formControlName="remarks"
+        rows="3"
+        maxlength="250"
+        [placeholder]="
+          remarksRequired()
+            ? 'Explain the difference (e.g. change given from own pocket)'
+            : 'Optional'
+        "
+      ></textarea>
+      <app-field-error
+        [control]="form.controls.remarks"
+        label="Remarks"
+        [messages]="{ required: 'Remarks are required when counted cash differs from expected' }"
+      />
+    </div>
+    <button type="submit" hidden aria-hidden="true"></button>
+  </form>
+
+  <div dialogFooter class="dialog-footer">
+    <p-button
+      label="Cancel"
+      severity="secondary"
+      [outlined]="true"
+      (onClick)="visible.set(false)"
+    />
+    <p-button
+      label="Close Day & Print"
+      icon="pi pi-print"
+      [loading]="saving()"
+      [disabled]="form.invalid || !summary() || loadingSummary() || saving()"
+      (onClick)="save()"
+    />
+  </div>
+</app-form-dialog>

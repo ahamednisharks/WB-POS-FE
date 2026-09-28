@@ -1,0 +1,134 @@
+<div class="page">
+  <app-page-header
+    title="Combo Master"
+    subtitle="Bundle items at a special price (Tea Time Combo, Party Pack …)"
+    searchPlaceholder="Search combo or item name"
+    addLabel="Add Combo"
+    (search)="onSearch($event)"
+    (add)="openForm()"
+  />
+
+  <div class="card p-0">
+    <p-table
+      [value]="loading() ? [] : rows()"
+      [lazy]="true"
+      (onLazyLoad)="onLazyLoad($event)"
+      [paginator]="true"
+      [rows]="pageSize()"
+      [first]="first()"
+      [totalRecords]="total()"
+      [rowsPerPageOptions]="pageSizeOptions"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="{first}–{last} of {totalRecords}"
+      [loading]="loading()"
+      [showLoader]="false"
+      sortField="createdAt"
+      [sortOrder]="-1"
+      dataKey="id"
+      [scrollable]="true"
+      [rowHover]="true"
+      [tableStyle]="{ 'min-width': '64rem' }"
+    >
+      <ng-template #header>
+        <tr>
+          <th style="width: 4.5rem">S.No</th>
+          <th pSortableColumn="name">Combo Name <p-sortIcon field="name" /></th>
+          <th>Items</th>
+          <th pSortableColumn="actualPrice" class="text-right">Actual Price <p-sortIcon field="actualPrice" /></th>
+          <th pSortableColumn="comboPrice" class="text-right">Combo Price <p-sortIcon field="comboPrice" /></th>
+          <th pSortableColumn="validTo">Valid Till <p-sortIcon field="validTo" /></th>
+          <th pSortableColumn="status">Status <p-sortIcon field="status" /></th>
+          <th class="text-right" style="width: 7rem">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-combo let-i="rowIndex">
+        <tr>
+          <td class="muted">{{ i + 1 }}</td>
+          <td class="bold">{{ combo.name }}</td>
+          <td>
+            <div class="combo-items">
+              <span class="muted small">{{ combo.items.length }} items · </span>{{ itemsText(combo) }}
+            </div>
+          </td>
+          <td class="text-right num muted">{{ combo.actualPrice | inr }}</td>
+          <td class="text-right num">
+            <div class="bold">{{ combo.comboPrice | inr }}</div>
+            @if (combo.savings > 0) {
+              <div class="yes small">Save {{ combo.savings | inr }}</div>
+            }
+          </td>
+          <td class="nowrap">
+            @if (combo.validTo) {
+              <div>{{ combo.validTo | istDate }}</div>
+            } @else {
+              <div class="muted">No end date</div>
+            }
+            @if (isExpired(combo)) {
+              <div class="warn-text">Expired</div>
+            } @else if (isUpcoming(combo)) {
+              <div class="muted small">Starts {{ combo.validFrom | istDate }}</div>
+            }
+          </td>
+          <td><app-status-tag [status]="combo.status" /></td>
+          <td>
+            <div class="row-actions">
+              <p-button
+                icon="pi pi-pencil"
+                [text]="true"
+                [rounded]="true"
+                pTooltip="Edit"
+                tooltipPosition="top"
+                ariaLabel="Edit combo"
+                (onClick)="openForm(combo)"
+              />
+              <p-button
+                icon="pi pi-trash"
+                severity="danger"
+                [text]="true"
+                [rounded]="true"
+                pTooltip="Delete"
+                tooltipPosition="top"
+                ariaLabel="Delete combo"
+                (onClick)="remove(combo)"
+              />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template #loadingbody>
+        @for (r of skeletonRows; track r) {
+          <tr appSkeletonRow [cols]="8"></tr>
+        }
+      </ng-template>
+
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="8">
+            @if (error(); as e) {
+              <app-empty-state
+                icon="pi pi-exclamation-triangle"
+                title="Could not load combos"
+                [message]="e"
+                actionLabel="Retry"
+                (action)="load()"
+              />
+            } @else {
+              <app-empty-state
+                icon="pi pi-gift"
+                title="No combos found"
+                message="Create a combo of 2 or more sale items at a special price."
+                actionLabel="Add Combo"
+                actionIcon="pi pi-plus"
+                (action)="openForm()"
+              />
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<app-combo-form [(visible)]="formVisible" [combo]="editing()" (saved)="load()" />

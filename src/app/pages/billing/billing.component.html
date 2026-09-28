@@ -1,0 +1,209 @@
+<div class="billing">
+  <section class="catalog" aria-label="Items">
+    <div class="catalog-top">
+      <div class="search-box">
+        <i class="pi pi-search" aria-hidden="true"></i>
+        <input
+          #searchInput
+          type="search"
+          [placeholder]="layout.isMobile() ? 'Search items' : 'Search name or code (F2)'"
+          aria-label="Search items by name or code"
+          autocomplete="off"
+          (input)="onSearch($event)"
+          (keydown.enter)="onSearchEnter()"
+        />
+        @if (search()) {
+          <button type="button" class="clear" (click)="clearSearch()" aria-label="Clear search">
+            <i class="pi pi-times" aria-hidden="true"></i>
+          </button>
+        }
+      </div>
+      <div class="barcode-box">
+        <i class="pi pi-barcode" aria-hidden="true"></i>
+        <input
+          #barcodeInput
+          type="text"
+          placeholder="Scan barcode"
+          aria-label="Barcode — scan or type and press Enter"
+          autocomplete="off"
+          (keydown.enter)="onBarcode($event)"
+        />
+      </div>
+    </div>
+
+    <div class="tabs" role="tablist" aria-label="Categories">
+      @for (t of tabs(); track t.id) {
+        <button
+          type="button"
+          role="tab"
+          class="tab"
+          [class.active]="activeTab() === t.id"
+          [attr.aria-selected]="activeTab() === t.id"
+          (click)="activeTab.set(t.id)"
+        >
+          @if (t.id === 'COMBOS') {
+            <i class="pi pi-gift" aria-hidden="true"></i>
+          }
+          {{ t.label }}
+        </button>
+      }
+    </div>
+
+    <div class="grid-wrap">
+      @if (loading()) {
+        <div class="grid">
+          @for (s of skeletonTiles; track s) {
+            <p-skeleton height="150px" borderRadius="14px" />
+          }
+        </div>
+      } @else if (error(); as e) {
+        <app-empty-state
+          icon="pi pi-exclamation-triangle"
+          title="Could not load items"
+          [message]="e"
+          actionLabel="Retry"
+          (action)="loadCatalog()"
+        />
+      } @else {
+        <div class="grid">
+          @for (item of visibleItems(); track item.id) {
+            <button
+              type="button"
+              class="tile"
+              (click)="onItemTap(item)"
+              [attr.aria-label]="item.name + ', ' + (item.sellingPrice | inr) + ' per ' + item.unitCode"
+            >
+              <div class="tile-img" [style.background]="tileColor(item.categoryId)">
+                @if (item.image) {
+                  <img [src]="item.image" alt="" loading="lazy" />
+                } @else {
+                  <span class="ini">{{ initials(item.name) }}</span>
+                }
+                @if (inCart().get(item.id); as q) {
+                  <span class="badge">{{ q | qty }}</span>
+                }
+                @if (item.allowDecimal) {
+                  <span class="weigh"><i class="pi pi-sliders-h" aria-hidden="true"></i> {{ item.unitCode }}</span>
+                }
+              </div>
+              <div class="tile-name">{{ item.name }}</div>
+              <div class="tile-price">
+                <strong>{{ item.sellingPrice | inr }}</strong>
+                <span>/ {{ item.unitCode }}</span>
+              </div>
+              @if (item.type === 'BOTH' && item.currentStock <= item.minStock) {
+                <div class="stock-low">Low stock: {{ item.currentStock | qty }}</div>
+              }
+            </button>
+          }
+          @for (combo of visibleCombos(); track combo.id) {
+            <button
+              type="button"
+              class="tile"
+              (click)="onComboTap(combo)"
+              [attr.aria-label]="combo.name + ' combo, ' + (combo.comboPrice | inr)"
+            >
+              <div class="tile-img combo-img">
+                @if (combo.image) {
+                  <img [src]="combo.image" alt="" loading="lazy" />
+                } @else {
+                  <i class="pi pi-gift" aria-hidden="true"></i>
+                }
+                @if (inCart().get(combo.id); as q) {
+                  <span class="badge">{{ q | qty }}</span>
+                }
+                @if (combo.savings > 0) {
+                  <span class="save">Save {{ combo.savings | inr: true }}</span>
+                }
+              </div>
+              <div class="tile-name">{{ combo.name }}</div>
+              <div class="tile-price">
+                <strong>{{ combo.comboPrice | inr }}</strong>
+                <s>{{ combo.actualPrice | inr: true }}</s>
+              </div>
+            </button>
+          }
+        </div>
+        @if (!visibleItems().length && !visibleCombos().length) {
+          @if (items().length === 0 && combos().length === 0) {
+            <app-empty-state
+              icon="pi pi-box"
+              title="No sale items yet"
+              message="Add units, categories and items in the Master screens to start billing."
+            />
+          } @else {
+            <app-empty-state
+              icon="pi pi-search"
+              title="No items match"
+              message="Try another name or code, or pick a different category."
+              [compact]="true"
+            />
+          }
+        }
+      }
+    </div>
+
+    @if (layout.isMobile()) {
+      <div class="mobile-bar">
+        <button type="button" class="bar-cart" (click)="cartSheetOpen.set(true)" aria-label="Open cart">
+          <i class="pi pi-shopping-cart" aria-hidden="true"></i>
+          <span>Cart ({{ cart.itemCount() }})</span>
+          <strong class="num">{{ cart.grandTotal() | inr }}</strong>
+        </button>
+        <p-button label="Pay" icon="pi pi-wallet" [disabled]="!cart.canCheckout() || saving()" (onClick)="openPayment()" />
+      </div>
+    }
+  </section>
+
+  @if (!layout.isMobile()) {
+    <aside class="cart-col">
+      <app-cart-panel
+        [heldCount]="heldCount()"
+        [saving]="saving()"
+        (pay)="openPayment()"
+        (hold)="hold()"
+        (clearCart)="clearCart()"
+        (showHeld)="heldOpen.set(true)"
+        (editQty)="onEditQty($event)"
+      />
+    </aside>
+  }
+</div>
+
+@if (layout.isMobile()) {
+  <ion-modal
+    class="cart-sheet"
+    [isOpen]="cartSheetOpen()"
+    [initialBreakpoint]="0.92"
+    [breakpoints]="[0, 0.92]"
+    (didDismiss)="cartSheetOpen.set(false)"
+  >
+    <ng-template>
+      <ion-content [scrollY]="false">
+        <!-- Sheet content is laid out at full height; only 92% is on screen. -->
+        <div class="sheet-body">
+          <app-cart-panel
+            [heldCount]="heldCount()"
+            [saving]="saving()"
+            (pay)="openPayment()"
+            (hold)="hold()"
+            (clearCart)="clearCart()"
+            (showHeld)="cartSheetOpen.set(false); heldOpen.set(true)"
+            (editQty)="onEditQty($event)"
+          />
+        </div>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+}
+
+<app-payment-dialog [(visible)]="paymentOpen" [total]="cart.grandTotal()" [saving]="saving()" (confirmed)="onPaid($event)" />
+<app-weight-pad
+  [(visible)]="padOpen"
+  [title]="padTitle()"
+  [unitCode]="padUnit()"
+  [allowDecimal]="padDecimal()"
+  [initial]="padInitial()"
+  (confirmed)="onPadConfirmed($event)"
+/>
+<app-held-bills-dialog [(visible)]="heldOpen" (resume)="onResume($event)" (changed)="refreshHeldCount()" />

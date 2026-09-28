@@ -1,0 +1,248 @@
+<app-form-dialog
+  [(visible)]="visible"
+  [header]="payment() ? 'Edit Salary Payment' : 'Add Salary Payment'"
+  width="800px"
+  [maximizable]="true"
+>
+  <form [formGroup]="form" (ngSubmit)="save()" class="form-grid cols-3" novalidate>
+    <!-- ======================= Period & Employee ======================= -->
+    <div class="form-section-title">Period &amp; Employee</div>
+
+    <div class="field">
+      <label for="sp-month">Month <span class="req">*</span></label>
+      <p-datepicker
+        inputId="sp-month"
+        formControlName="month"
+        view="month"
+        dateFormat="mm/yy"
+        [showIcon]="true"
+        [readonlyInput]="true"
+        placeholder="mm/yyyy"
+        appendTo="body"
+      />
+      <app-field-error [control]="form.controls.month" label="Month" />
+    </div>
+
+    <div class="field span-2">
+      <label for="sp-emp">Employee <span class="req">*</span></label>
+      <p-select
+        inputId="sp-emp"
+        formControlName="employeeId"
+        [options]="employeeOptions()"
+        optionLabel="label"
+        optionValue="value"
+        [filter]="true"
+        filterBy="label"
+        [loading]="employeesLoading()"
+        placeholder="Select employee"
+        emptyMessage="No active employees"
+        appendTo="body"
+      />
+      <app-field-error [control]="form.controls.employeeId" label="Employee" />
+    </div>
+
+    <!-- ======================= Attendance & Gross ======================= -->
+    <div class="form-section-title">Attendance &amp; Gross</div>
+
+    <div class="field">
+      <label for="sp-working">Working Days <span class="req">*</span></label>
+      <p-inputnumber inputId="sp-working" formControlName="workingDays" [min]="1" [max]="31" [useGrouping]="false" [showButtons]="true" />
+      <app-field-error [control]="form.controls.workingDays" label="Working days" />
+    </div>
+
+    <div class="field">
+      <label for="sp-present">Days Present <span class="req">*</span></label>
+      <p-inputnumber
+        inputId="sp-present"
+        formControlName="daysPresent"
+        [min]="0"
+        [max]="31"
+        [maxFractionDigits]="1"
+        [useGrouping]="false"
+        placeholder="e.g. 24 or 24.5"
+      />
+      <app-field-error
+        [control]="form.controls.daysPresent"
+        label="Days present"
+        [messages]="{ exceeds: 'Days present cannot exceed working days' }"
+      />
+    </div>
+
+    <div class="field">
+      <label id="sp-gross-label">Gross Salary (auto)</label>
+      <div class="readonly-box num" aria-labelledby="sp-gross-label">
+        @if (setupsLoading()) {
+          <span class="muted">Calculating…</span>
+        } @else {
+          {{ gross() | inr }}
+        }
+      </div>
+    </div>
+
+    @if (form.controls.employeeId.value && monthStr() && !setupsLoading()) {
+      <div class="span-all">
+        @if (activeSetup(); as s) {
+          <small class="muted">
+            Based on {{ s.salaryType | enumLabel }} setup from {{ s.effectiveFrom | istDate }}:
+            @if (s.salaryType === 'MONTHLY') {
+              ({{ s.basicSalary | inr }} basic + {{ s.allowances | inr }} allowances) × days present ÷ working days
+            } @else {
+              {{ s.basicSalary | inr }}/day × days present + {{ s.allowances | inr }} allowances
+            }
+          </small>
+        } @else {
+          <small class="warn-text">
+            <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+            No salary setup effective for {{ monthStr() | monthLabel }}.
+            {{ payment() ? 'The saved gross amount is kept.' : 'Gross is ₹0 — add a Salary Setup for this employee first.' }}
+          </small>
+        }
+      </div>
+    }
+
+    <!-- ======================= Additions & Deductions ======================= -->
+    <div class="form-section-title">Additions &amp; Deductions</div>
+
+    <div class="field">
+      <label for="sp-bonus">Bonus / Overtime ₹</label>
+      <p-inputnumber
+        inputId="sp-bonus"
+        formControlName="bonus"
+        mode="currency"
+        currency="INR"
+        locale="en-IN"
+        [min]="0"
+        [maxFractionDigits]="2"
+      />
+      <app-field-error [control]="form.controls.bonus" label="Bonus" />
+    </div>
+
+    <div class="field">
+      <label for="sp-advance">Advance Deduction ₹</label>
+      <p-inputnumber
+        inputId="sp-advance"
+        formControlName="advanceDeduction"
+        mode="currency"
+        currency="INR"
+        locale="en-IN"
+        [min]="0"
+        [maxFractionDigits]="2"
+      />
+      <app-field-error [control]="form.controls.advanceDeduction" label="Advance deduction" />
+    </div>
+
+    <div class="field">
+      <label for="sp-other">Other Deductions ₹</label>
+      <p-inputnumber
+        inputId="sp-other"
+        formControlName="otherDeductions"
+        mode="currency"
+        currency="INR"
+        locale="en-IN"
+        [min]="0"
+        [maxFractionDigits]="2"
+      />
+      <app-field-error [control]="form.controls.otherDeductions" label="Other deductions" />
+    </div>
+
+    <div class="field span-all">
+      <label for="sp-reason">
+        Deduction Reason
+        @if ((form.controls.otherDeductions.value ?? 0) > 0) {
+          <span class="req">*</span>
+        }
+      </label>
+      <input
+        pInputText
+        id="sp-reason"
+        formControlName="deductionReason"
+        maxlength="120"
+        placeholder="e.g. Damaged goods, uniform"
+      />
+      <app-field-error [control]="form.controls.deductionReason" label="Reason" />
+    </div>
+
+    <div class="span-all">
+      <div class="readonly-box net-box">
+        <span class="muted small">
+          {{ gross() | inr }} gross + {{ (form.controls.bonus.value ?? 0) | inr }} bonus − {{ deductions() | inr }} deductions
+        </span>
+        <span class="grow"></span>
+        <span class="bold">Net Salary: <span class="num">{{ net() | inr }}</span></span>
+      </div>
+      @if (net() < 0) {
+        <small class="error-text">Net salary cannot be negative — reduce the deductions.</small>
+      }
+    </div>
+
+    <!-- ======================= Payment ======================= -->
+    <div class="form-section-title">Payment</div>
+
+    <div class="field">
+      <label id="sp-status-label">Status</label>
+      <p-selectbutton
+        [options]="statusOptions"
+        optionLabel="label"
+        optionValue="value"
+        formControlName="status"
+        [allowEmpty]="false"
+        ariaLabelledBy="sp-status-label"
+      />
+    </div>
+
+    <div class="field">
+      <label for="sp-pdate">Payment Date @if (paid()) {<span class="req">*</span>}</label>
+      <p-datepicker
+        inputId="sp-pdate"
+        formControlName="paymentDate"
+        dateFormat="dd-mm-yy"
+        [showIcon]="true"
+        [showClear]="!paid()"
+        [maxDate]="today"
+        placeholder="dd-mm-yyyy"
+        appendTo="body"
+      />
+      <app-field-error
+        [control]="form.controls.paymentDate"
+        label="Payment date"
+        [messages]="{ future: 'Payment date cannot be in the future' }"
+      />
+    </div>
+
+    <div class="field">
+      <label for="sp-mode">Payment Mode @if (paid()) {<span class="req">*</span>}</label>
+      <p-select
+        inputId="sp-mode"
+        formControlName="paymentMode"
+        [options]="modeOptions"
+        optionLabel="label"
+        optionValue="value"
+        [showClear]="!paid()"
+        placeholder="Select mode"
+        appendTo="body"
+      />
+      <app-field-error [control]="form.controls.paymentMode" label="Payment mode" />
+    </div>
+
+    @if (paid() && form.controls.paymentMode.value === 'CASH') {
+      <div class="span-all">
+        <small class="muted">
+          <i class="pi pi-info-circle" aria-hidden="true"></i>
+          Cash salary is recorded as a cash-out from the counter.
+        </small>
+      </div>
+    }
+    <button type="submit" hidden aria-hidden="true"></button>
+  </form>
+
+  <div dialogFooter class="dialog-footer">
+    <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="visible.set(false)" />
+    <p-button
+      label="Save"
+      icon="pi pi-check"
+      [loading]="saving()"
+      [disabled]="form.invalid || saving() || setupsLoading() || net() < 0"
+      (onClick)="save()"
+    />
+  </div>
+</app-form-dialog>

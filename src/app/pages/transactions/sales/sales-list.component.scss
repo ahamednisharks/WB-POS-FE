@@ -1,0 +1,79 @@
+.stat-grid {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  transition: opacity 0.2s;
+
+  &.refreshing {
+    opacity: 0.55;
+  }
+
+  @media (max-width: 575px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    .stat-value {
+      font-size: 1.1rem;
+      overflow-wrap: anywhere;
+    }
+  }
+}
+
+.stat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  flex: 0 0 auto;
+
+  &.tone-brand {
+    background: var(--brand-soft);
+    color: #8c5c00;
+  }
+  &.tone-cash {
+    background: #fdf3d0;
+    color: #9a6b00;
+  }
+  &.tone-upi {
+    background: #e8e7fd;
+    color: #4338ca;
+  }
+  &.tone-card {
+    background: #dcf3f1;
+    color: #0f766e;
+  }
+  &.tone-refund {
+    background: #fde8e8;
+    color: #b91c1c;
+  }
+  &.tone-net {
+    background: #e8f5ec;
+    color: #15803d;
+  }
+}
+
+.neg {
+  color: var(--danger);
+}
+
+.cashier-note {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  min-height: 2.5rem;
+}
+
+.bill-link {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ref-cell span {
+  display: inline-block;
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}

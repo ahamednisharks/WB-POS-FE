@@ -1,0 +1,160 @@
+<app-form-dialog [(visible)]="visible" header="Payment" width="560px">
+  <div class="pay">
+    <div class="due">
+      <span>Amount to collect</span>
+      <strong class="num">{{ total() | inr }}</strong>
+    </div>
+
+    <div class="modes" role="radiogroup" aria-label="Payment mode">
+      @for (m of modes; track m.value) {
+        <button
+          type="button"
+          class="mode"
+          role="radio"
+          [class.active]="mode() === m.value"
+          [attr.aria-checked]="mode() === m.value"
+          (click)="selectMode(m.value)"
+        >
+          <i [class]="m.icon" aria-hidden="true"></i>
+          <span>{{ m.label }}</span>
+        </button>
+      }
+    </div>
+
+    @switch (mode()) {
+      @case ('CASH') {
+        <div class="field">
+          <label for="pay-received">Amount Received <span class="req">*</span></label>
+          <p-inputnumber
+            inputId="pay-received"
+            [ngModel]="received()"
+            (ngModelChange)="setReceived($event)"
+            mode="currency"
+            currency="INR"
+            locale="en-IN"
+            [min]="0"
+            [autofocus]="true"
+            inputStyleClass="big-input"
+            (keydown.enter)="submit('print')"
+          />
+        </div>
+        <div class="quick">
+          <button type="button" class="note" (click)="quick(total())">Exact</button>
+          @for (n of quickNotes; track n) {
+            <button type="button" class="note" [disabled]="n < total()" (click)="quick(n)">₹{{ n }}</button>
+          }
+        </div>
+        <div class="change" [class.neg]="change() < 0">
+          <span>Change to return</span>
+          <strong class="num">{{ (change() > 0 ? change() : 0) | inr }}</strong>
+        </div>
+      }
+      @case ('UPI') {
+        <div class="upi">
+          <div class="qr" aria-label="UPI QR code placeholder">
+            <i class="pi pi-qrcode" aria-hidden="true"></i>
+            <span class="qr-amt">{{ total() | inr }}</span>
+          </div>
+          <div class="upi-text">
+            <p>Ask the customer to scan and pay</p>
+            <strong class="num">{{ total() | inr }}</strong>
+            <p class="muted small">to {{ shopName }} · {{ upiId }}</p>
+            <p-button
+              [label]="upiConfirmed() ? 'Payment received' : 'Received'"
+              [icon]="upiConfirmed() ? 'pi pi-check-circle' : 'pi pi-check'"
+              [severity]="upiConfirmed() ? 'success' : 'primary'"
+              [outlined]="!upiConfirmed()"
+              (onClick)="upiConfirmed.set(!upiConfirmed())"
+            />
+          </div>
+        </div>
+      }
+      @case ('CARD') {
+        <div class="field">
+          <label for="pay-card">Card Ref No (last 4 digits, optional)</label>
+          <input
+            pInputText
+            id="pay-card"
+            inputmode="numeric"
+            maxlength="4"
+            placeholder="e.g. 4821"
+            [ngModel]="cardRef()"
+            (ngModelChange)="cardRef.set($event)"
+          />
+        </div>
+        <p class="muted small">Swipe/tap the card on the terminal for {{ total() | inr }}, then save.</p>
+      }
+      @case ('SPLIT') {
+        <div class="splits">
+          @for (row of splits(); track $index; let i = $index) {
+            <div class="split-row">
+              <p-select
+                [options]="modeOptions"
+                optionLabel="label"
+                optionValue="value"
+                [ngModel]="row.mode"
+                (ngModelChange)="updateSplit(i, { mode: $event })"
+                [ariaLabel]="'Split ' + (i + 1) + ' mode'"
+              />
+              <p-inputnumber
+                [ngModel]="row.amount"
+                (ngModelChange)="updateSplit(i, { amount: $event })"
+                mode="currency"
+                currency="INR"
+                locale="en-IN"
+                [min]="0"
+                [ariaLabel]="'Split ' + (i + 1) + ' amount'"
+              />
+              <p-button
+                icon="pi pi-equals"
+                [text]="true"
+                [rounded]="true"
+                ariaLabel="Fill remaining"
+                (onClick)="fillRemaining(i)"
+                [disabled]="splitRemaining() === 0"
+              />
+              <p-button
+                icon="pi pi-times"
+                [text]="true"
+                [rounded]="true"
+                severity="secondary"
+                ariaLabel="Remove split"
+                [disabled]="splits().length <= 2"
+                (onClick)="removeSplit(i)"
+              />
+            </div>
+          }
+          <div class="split-foot">
+            <p-button label="Add row" icon="pi pi-plus" size="small" [text]="true" (onClick)="addSplit()" [disabled]="splits().length >= 3" />
+            <span [class.error-text]="splitRemaining() !== 0" class="small">
+              Remaining: <strong class="num">{{ splitRemaining() | inr }}</strong>
+            </span>
+          </div>
+        </div>
+      }
+    }
+
+    @if (error(); as err) {
+      <small class="error-text">{{ err }}</small>
+    }
+  </div>
+
+  <div dialogFooter class="dialog-footer">
+    <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="visible.set(false)" [disabled]="saving()" />
+    <p-button
+      label="Save & Share"
+      icon="pi pi-whatsapp"
+      severity="success"
+      [outlined]="true"
+      [disabled]="!!error() || saving()"
+      (onClick)="submit('share')"
+    />
+    <p-button
+      label="Save & Print"
+      icon="pi pi-print"
+      [loading]="saving()"
+      [disabled]="!!error() || saving()"
+      (onClick)="submit('print')"
+    />
+  </div>
+</app-form-dialog>

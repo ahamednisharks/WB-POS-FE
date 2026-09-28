@@ -1,0 +1,192 @@
+<div class="page">
+  <app-page-header
+    title="Login Details"
+    subtitle="POS logins for employees whose type can log in"
+    searchPlaceholder="Search username, name or Emp ID"
+    addLabel="Create Login"
+    (search)="onSearch($event)"
+    (add)="openForm()"
+  >
+    <div class="filter-bar">
+      <div class="filter">
+        <label for="login-filter-role">Role</label>
+        <p-select
+          inputId="login-filter-role"
+          [options]="roleOptions"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="roleFilter()"
+          (ngModelChange)="setRole($event)"
+          [showClear]="true"
+          placeholder="All roles"
+          appendTo="body"
+        />
+      </div>
+      <div class="filter">
+        <label for="login-filter-status">Status</label>
+        <p-select
+          inputId="login-filter-status"
+          [options]="statusOptions"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="statusFilter()"
+          (ngModelChange)="setStatus($event)"
+          [showClear]="true"
+          placeholder="All statuses"
+          appendTo="body"
+        />
+      </div>
+    </div>
+  </app-page-header>
+
+  <div class="card p-0">
+    <p-table
+      [value]="loading() ? [] : rows()"
+      [lazy]="true"
+      (onLazyLoad)="onLazyLoad($event)"
+      [paginator]="true"
+      [rows]="pageSize()"
+      [first]="first()"
+      [totalRecords]="total()"
+      [rowsPerPageOptions]="pageSizeOptions"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="{first}–{last} of {totalRecords}"
+      [loading]="loading()"
+      [showLoader]="false"
+      sortField="createdAt"
+      [sortOrder]="-1"
+      dataKey="id"
+      [scrollable]="true"
+      [rowHover]="true"
+      [tableStyle]="{ 'min-width': '62rem' }"
+    >
+      <ng-template #header>
+        <tr>
+          <th pSortableColumn="empCode" style="width: 7rem">Emp ID <p-sortIcon field="empCode" /></th>
+          <th pSortableColumn="employeeName">Employee <p-sortIcon field="employeeName" /></th>
+          <th pSortableColumn="username">Username <p-sortIcon field="username" /></th>
+          <th pSortableColumn="role">Role <p-sortIcon field="role" /></th>
+          <th pSortableColumn="status">Status <p-sortIcon field="status" /></th>
+          <th pSortableColumn="lastLogin">Last Login <p-sortIcon field="lastLogin" /></th>
+          <th class="text-right" style="width: 12rem">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-l>
+        <tr>
+          <td><span class="code">{{ l.empCode }}</span></td>
+          <td class="bold">
+            {{ l.employeeName }}
+            @if (isSelf(l)) {
+              <span class="muted small">(you)</span>
+            }
+          </td>
+          <td><span class="code">{{ l.username }}</span></td>
+          <td><app-status-tag [status]="l.role" /></td>
+          <td><app-status-tag [status]="l.status" /></td>
+          <td class="nowrap">
+            @if (l.lastLogin) {
+              {{ l.lastLogin | istDateTime }}
+            } @else {
+              <span class="muted">Never</span>
+            }
+          </td>
+          <td>
+            <div class="row-actions">
+              <p-button
+                icon="pi pi-pencil"
+                [text]="true"
+                [rounded]="true"
+                pTooltip="Edit"
+                tooltipPosition="top"
+                ariaLabel="Edit login"
+                (onClick)="openForm(l)"
+              />
+              <p-button
+                icon="pi pi-key"
+                severity="secondary"
+                [text]="true"
+                [rounded]="true"
+                pTooltip="Reset Password"
+                tooltipPosition="top"
+                ariaLabel="Reset password"
+                (onClick)="openReset(l)"
+              />
+              @if (l.status === 'BLOCKED') {
+                <p-button
+                  icon="pi pi-lock-open"
+                  severity="success"
+                  [text]="true"
+                  [rounded]="true"
+                  pTooltip="Unblock"
+                  tooltipPosition="top"
+                  ariaLabel="Unblock login"
+                  [loading]="busyId() === l.id"
+                  (onClick)="toggleBlock(l)"
+                />
+              } @else {
+                <p-button
+                  icon="pi pi-ban"
+                  severity="warn"
+                  [text]="true"
+                  [rounded]="true"
+                  [pTooltip]="isSelf(l) ? 'You cannot block yourself' : 'Block'"
+                  tooltipPosition="top"
+                  ariaLabel="Block login"
+                  [disabled]="isSelf(l)"
+                  [loading]="busyId() === l.id"
+                  (onClick)="toggleBlock(l)"
+                />
+              }
+              <p-button
+                icon="pi pi-trash"
+                severity="danger"
+                [text]="true"
+                [rounded]="true"
+                [pTooltip]="isSelf(l) ? 'You cannot delete your own login' : 'Delete'"
+                tooltipPosition="top"
+                ariaLabel="Delete login"
+                [disabled]="isSelf(l)"
+                (onClick)="remove(l)"
+              />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template #loadingbody>
+        @for (r of skeletonRows; track r) {
+          <tr appSkeletonRow [cols]="7"></tr>
+        }
+      </ng-template>
+
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="7">
+            @if (error(); as e) {
+              <app-empty-state
+                icon="pi pi-exclamation-triangle"
+                title="Could not load logins"
+                [message]="e"
+                actionLabel="Retry"
+                (action)="load()"
+              />
+            } @else {
+              <app-empty-state
+                icon="pi pi-key"
+                title="No logins found"
+                message="Create a POS login for employees whose type has “Can Login” turned on (e.g. Manager, Cashier)."
+                actionLabel="Create Login"
+                actionIcon="pi pi-plus"
+                (action)="openForm()"
+              />
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<app-login-form [(visible)]="formVisible" [login]="editing()" (saved)="load()" />
+<app-reset-password-dialog [(visible)]="resetVisible" [login]="resetting()" />

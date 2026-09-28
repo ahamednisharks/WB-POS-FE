@@ -1,0 +1,77 @@
+<ion-content class="login-bg">
+  <main class="wrap">
+    <section class="card" aria-labelledby="login-title">
+      <img class="logo" [src]="shop.logo" alt="" width="96" height="96" />
+      <h1 id="login-title">{{ shop.name }}</h1>
+      <p class="sub">WB-POS · Sign in to start billing</p>
+
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="field">
+          <label for="username">Username <span class="req">*</span></label>
+          <input
+            pInputText
+            id="username"
+            formControlName="username"
+            autocomplete="username"
+            autocapitalize="off"
+            spellcheck="false"
+            placeholder="Enter username"
+          />
+          <app-field-error
+            [control]="form.controls.username"
+            label="Username"
+            [messages]="{ pattern: 'Username cannot contain spaces' }"
+          />
+        </div>
+
+        <div class="field">
+          <label for="password">Password <span class="req">*</span></label>
+          <p-password
+            inputId="password"
+            formControlName="password"
+            [toggleMask]="true"
+            [feedback]="false"
+            autocomplete="current-password"
+            placeholder="Enter password"
+            styleClass="w-full"
+          />
+          <app-field-error [control]="form.controls.password" label="Password" />
+        </div>
+
+        <div class="row">
+          <div class="remember">
+            <p-checkbox inputId="remember" formControlName="remember" [binary]="true" />
+            <label for="remember">Remember me</label>
+          </div>
+          <button type="button" class="link-btn" (click)="showForgot.set(!showForgot())">Forgot password?</button>
+        </div>
+
+        @if (showForgot()) {
+          <p-message severity="info" icon="pi pi-info-circle" text="Contact Admin to reset your password." />
+        }
+
+        @if (errorMessage(); as msg) {
+          <p-message severity="error" icon="pi pi-times-circle" [text]="msg" />
+        }
+
+        <p-button
+          type="submit"
+          label="Login"
+          icon="pi pi-sign-in"
+          [loading]="submitting()"
+          [disabled]="submitting()"
+          styleClass="w-full login-btn"
+        />
+      </form>
+
+      @if (showDemo) {
+        <div class="demo">
+          <span>Demo logins (mock mode):</span>
+          <button type="button" class="link-btn" (click)="fillDemo('admin', 'admin@123')">admin / admin@123</button>
+          <button type="button" class="link-btn" (click)="fillDemo('cashier', 'cashier123')">cashier / cashier123</button>
+        </div>
+      }
+    </section>
+    <p class="foot">{{ shop.address }}</p>
+  </main>
+</ion-content>

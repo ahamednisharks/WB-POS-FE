@@ -1,0 +1,38 @@
+<div class="picker">
+  <div class="preview" [class.round]="round()">
+    @if (value(); as src) {
+      <img [src]="src" alt="Selected image preview" />
+    } @else {
+      <i class="pi pi-image" aria-hidden="true"></i>
+    }
+  </div>
+  <div class="side">
+    <input #file type="file" [accept]="accept()" hidden (change)="onFile($event)" />
+    <div class="buttons">
+      <p-button
+        [label]="value() ? 'Change' : 'Upload'"
+        icon="pi pi-upload"
+        size="small"
+        [outlined]="true"
+        [loading]="busy()"
+        [disabled]="disabled()"
+        (onClick)="file.click()"
+      />
+      @if (value()) {
+        <p-button
+          label="Remove"
+          icon="pi pi-times"
+          size="small"
+          severity="secondary"
+          [text]="true"
+          [disabled]="disabled()"
+          (onClick)="clear()"
+        />
+      }
+    </div>
+    <small class="hint">{{ hint() }}</small>
+    @if (error()) {
+      <small class="error-text">{{ error() }}</small>
+    }
+  </div>
+</div>

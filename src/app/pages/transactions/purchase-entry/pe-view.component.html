@@ -1,0 +1,184 @@
+<app-form-dialog
+  [(visible)]="visible"
+  [header]="'Purchase Entry ' + (pe()?.peNo ?? '')"
+  width="980px"
+  [maximizable]="true"
+>
+  @if (pe(); as entry) {
+    <div class="detail-grid">
+      <div class="dl">
+        <span>PE No</span>
+        <span><code class="code">{{ entry.peNo }}</code></span>
+      </div>
+      <div class="dl">
+        <span>PE Date</span>
+        <span>{{ entry.peDate | istDate }}</span>
+      </div>
+      <div class="dl">
+        <span>Supplier</span>
+        <span>{{ entry.supplierName }}</span>
+      </div>
+      <div class="dl">
+        <span>Supplier State</span>
+        <span>{{ entry.supplierState }} · {{ entry.isInterState ? 'IGST' : 'CGST + SGST' }}</span>
+      </div>
+      <div class="dl">
+        <span>Against PO</span>
+        <span>{{ entry.poNo || '—' }}</span>
+      </div>
+      <div class="dl">
+        <span>Supplier Invoice No.</span>
+        <span>{{ entry.invoiceNo }}</span>
+      </div>
+      <div class="dl">
+        <span>Invoice Date</span>
+        <span>{{ entry.invoiceDate | istDate }}</span>
+      </div>
+      <div class="dl">
+        <span>Due Date</span>
+        <span [class.low-stock]="overdue()">
+          {{ (entry.dueDate | istDate) || '—' }}
+          @if (overdue()) {
+            (overdue)
+          }
+        </span>
+      </div>
+      <div class="dl">
+        <span>Payment Status</span>
+        <span><app-status-tag [status]="entry.paymentStatus" /></span>
+      </div>
+      <div class="dl">
+        <span>Invoice Copy</span>
+        <span>
+          @if (entry.invoiceCopy; as file) {
+            <a [href]="file.dataUrl" target="_blank" rel="noopener" [attr.download]="file.name">
+              <i [class]="file.type === 'application/pdf' ? 'pi pi-file-pdf' : 'pi pi-image'" aria-hidden="true"></i>
+              {{ file.name }}
+            </a>
+          } @else {
+            <span class="muted">Not attached</span>
+          }
+        </span>
+      </div>
+    </div>
+
+    <div class="view-table-wrap">
+      <table class="view-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Item</th>
+            <th class="text-right">Ordered</th>
+            <th class="text-right">Received</th>
+            <th class="text-right">Rate</th>
+            <th class="text-right">GST %</th>
+            <th>Expiry</th>
+            <th class="text-right">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (line of entry.items; track line.itemId; let i = $index) {
+            <tr>
+              <td class="muted">{{ i + 1 }}</td>
+              <td class="bold">{{ line.itemName }}</td>
+              <td class="text-right num">{{ line.orderedQty === null ? '—' : (line.orderedQty | qty) }}</td>
+              <td class="text-right num">{{ line.receivedQty | qty }} {{ line.unitCode }}</td>
+              <td class="text-right num">{{ line.rate | inr }}</td>
+              <td class="text-right num">{{ line.gstPercent }}%</td>
+              <td>{{ (line.expiryDate | istDate) || '—' }}</td>
+              <td class="text-right num bold">{{ line.amount | inr }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="bottom-grid">
+      <div>
+        <div class="form-section-title">Payments</div>
+        @if (entry.payments.length) {
+          <div class="view-table-wrap mt-1">
+            <table class="view-table" style="min-width: 24rem">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Mode</th>
+                  <th class="text-right">Amount</th>
+                  <th>Recorded</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (p of entry.payments; track p.id) {
+                  <tr>
+                    <td>{{ p.date | istDate }}</td>
+                    <td>{{ modeLabel[p.mode] }}</td>
+                    <td class="text-right num bold">{{ p.amount | inr }}</td>
+                    <td class="muted small">{{ p.createdAt | istDateTime }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <p class="muted small">No payments recorded yet.</p>
+        }
+      </div>
+
+      <div class="totals">
+        <div class="kv">
+          <span>Sub Total</span>
+          <span class="num">{{ entry.subTotal | inr }}</span>
+        </div>
+        @if (entry.isInterState) {
+          <div class="kv">
+            <span>IGST</span>
+            <span class="num">{{ entry.igst | inr }}</span>
+          </div>
+        } @else {
+          <div class="kv">
+            <span>CGST</span>
+            <span class="num">{{ entry.cgst | inr }}</span>
+          </div>
+          <div class="kv">
+            <span>SGST</span>
+            <span class="num">{{ entry.sgst | inr }}</span>
+          </div>
+        }
+        <div class="kv">
+          <span>Discount</span>
+          <span class="num">−{{ entry.discount | inr }}</span>
+        </div>
+        <div class="kv">
+          <span>Freight / Other</span>
+          <span class="num">{{ entry.otherCharges | inr }}</span>
+        </div>
+        <div class="kv">
+          <span>Round Off</span>
+          <span class="num">{{ entry.roundOff | inr }}</span>
+        </div>
+        <div class="kv grand">
+          <span>Grand Total</span>
+          <span class="num">{{ entry.grandTotal | inr }}</span>
+        </div>
+        <div class="kv">
+          <span>Paid</span>
+          <span class="num yes">{{ entry.paidAmount | inr }}</span>
+        </div>
+        <div class="kv">
+          <span>Balance</span>
+          <span class="num bold" [class.low-stock]="entry.balance > 0">{{ entry.balance | inr }}</span>
+        </div>
+      </div>
+    </div>
+  }
+
+  <div dialogFooter class="dialog-footer">
+    <p-button label="Close" severity="secondary" [outlined]="true" (onClick)="visible.set(false)" />
+    <p-button label="Print" icon="pi pi-print" severity="secondary" (onClick)="print()" />
+    @if (pe(); as entry) {
+      @if (entry.balance > 0) {
+        <p-button label="Add Payment" icon="pi pi-wallet" (onClick)="pay()" />
+      }
+    }
+  </div>
+</app-form-dialog>

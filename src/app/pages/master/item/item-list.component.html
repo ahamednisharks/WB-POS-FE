@@ -1,0 +1,227 @@
+<div class="page">
+  <app-page-header
+    title="Item Master"
+    subtitle="Products you sell and raw materials you buy"
+    searchPlaceholder="Search name, code or barcode"
+    addLabel="Add Item"
+    (search)="onSearch($event)"
+    (add)="openForm()"
+  >
+    <div class="filter-bar mt-1">
+      <div class="filter">
+        <label for="item-filter-category">Category</label>
+        <p-select
+          inputId="item-filter-category"
+          [options]="categoryOptions()"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="categoryId()"
+          (ngModelChange)="setCategory($event)"
+          [showClear]="true"
+          [filter]="true"
+          filterBy="label"
+          placeholder="All categories"
+        />
+      </div>
+      <div class="filter">
+        <label for="item-filter-type">Item Type</label>
+        <p-select
+          inputId="item-filter-type"
+          [options]="typeOptions"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="type()"
+          (ngModelChange)="setType($event)"
+          [showClear]="true"
+          placeholder="All types"
+        />
+      </div>
+      <div class="filter">
+        <label for="item-filter-status">Status</label>
+        <p-select
+          inputId="item-filter-status"
+          [options]="statusOptions"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="status()"
+          (ngModelChange)="setStatus($event)"
+          [showClear]="true"
+          placeholder="All statuses"
+        />
+      </div>
+    </div>
+  </app-page-header>
+
+  @if (showSetupHint()) {
+    <div class="info-banner" role="note">
+      <i class="pi pi-info-circle" aria-hidden="true"></i>
+      <div>
+        <div class="bold">Setting up the shop? Follow this order:</div>
+        <div class="setup-steps">
+          <a routerLink="/master/units">Unit Master</a>
+          <i class="pi pi-arrow-right" aria-hidden="true"></i>
+          <a routerLink="/master/categories">Category</a>
+          <i class="pi pi-arrow-right" aria-hidden="true"></i>
+          <span class="bold">Item Master</span>
+          <i class="pi pi-arrow-right" aria-hidden="true"></i>
+          <a routerLink="/master/combos">Combo Master</a>
+          <i class="pi pi-arrow-right" aria-hidden="true"></i>
+          <a routerLink="/billing">start Billing</a>
+        </div>
+      </div>
+    </div>
+  }
+
+  <div class="card p-0">
+    <p-table
+      [value]="loading() ? [] : rows()"
+      [lazy]="true"
+      (onLazyLoad)="onLazyLoad($event)"
+      [paginator]="true"
+      [rows]="pageSize()"
+      [first]="first()"
+      [totalRecords]="total()"
+      [rowsPerPageOptions]="pageSizeOptions"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="{first}–{last} of {totalRecords}"
+      [loading]="loading()"
+      [showLoader]="false"
+      sortField="createdAt"
+      [sortOrder]="-1"
+      dataKey="id"
+      [scrollable]="true"
+      [rowHover]="true"
+      [tableStyle]="{ 'min-width': '78rem' }"
+    >
+      <ng-template #header>
+        <tr>
+          <th style="width: 4.5rem">S.No</th>
+          <th style="width: 4.5rem">Image</th>
+          <th pSortableColumn="code">Code <p-sortIcon field="code" /></th>
+          <th pSortableColumn="name">Name <p-sortIcon field="name" /></th>
+          <th pSortableColumn="type">Type <p-sortIcon field="type" /></th>
+          <th pSortableColumn="categoryName">Category <p-sortIcon field="categoryName" /></th>
+          <th>Unit</th>
+          <th pSortableColumn="sellingPrice" class="text-right">Price <p-sortIcon field="sellingPrice" /></th>
+          <th pSortableColumn="gstPercent" class="text-right">GST % <p-sortIcon field="gstPercent" /></th>
+          <th pSortableColumn="currentStock" class="text-right">Stock <p-sortIcon field="currentStock" /></th>
+          <th pSortableColumn="status">Status <p-sortIcon field="status" /></th>
+          <th class="text-right" style="width: 7rem">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-item let-i="rowIndex">
+        <tr>
+          <td class="muted">{{ i + 1 }}</td>
+          <td>
+            @if (item.image) {
+              <img class="thumb" [src]="item.image" [alt]="item.name" />
+            } @else {
+              <span class="thumb" aria-hidden="true">{{ initials(item.name) }}</span>
+            }
+          </td>
+          <td><code class="code">{{ item.code }}</code></td>
+          <td class="bold">{{ item.name }}</td>
+          <td class="nowrap">{{ typeName(item) }}</td>
+          <td>{{ item.categoryName }}</td>
+          <td class="nowrap">{{ item.unitCode }}</td>
+          <td class="text-right num">
+            @if (item.type === 'RAW') {
+              <span class="muted">—</span>
+            } @else {
+              <div>{{ item.sellingPrice | inr }}</div>
+              <div class="muted small">{{ item.priceIncludesGst ? 'incl. GST' : '+ GST' }}</div>
+            }
+          </td>
+          <td class="text-right num">{{ item.gstPercent }}%</td>
+          <td class="text-right num">
+            @if (item.type === 'SALE') {
+              <span class="muted">—</span>
+            } @else {
+              <span [class.low-stock]="isLowStock(item)">
+                @if (isLowStock(item)) {
+                  <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+                }
+                {{ item.currentStock | qty }} {{ item.unitCode }}
+              </span>
+            }
+          </td>
+          <td><app-status-tag [status]="item.status" /></td>
+          <td>
+            <div class="row-actions">
+              <p-button
+                icon="pi pi-pencil"
+                [text]="true"
+                [rounded]="true"
+                pTooltip="Edit"
+                tooltipPosition="top"
+                ariaLabel="Edit item"
+                (onClick)="openForm(item)"
+              />
+              <p-button
+                icon="pi pi-trash"
+                severity="danger"
+                [text]="true"
+                [rounded]="true"
+                pTooltip="Delete"
+                tooltipPosition="top"
+                ariaLabel="Delete item"
+                (onClick)="remove(item)"
+              />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template #loadingbody>
+        @for (r of skeletonRows; track r) {
+          <tr appSkeletonRow [cols]="12"></tr>
+        }
+      </ng-template>
+
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="12">
+            @if (error(); as e) {
+              <app-empty-state
+                icon="pi pi-exclamation-triangle"
+                title="Could not load items"
+                [message]="e"
+                actionLabel="Retry"
+                (action)="load()"
+              />
+            } @else if (hasFilters()) {
+              @if (categoryId() || type() || status()) {
+                <app-empty-state
+                  icon="pi pi-filter-slash"
+                  title="No matching items"
+                  message="Try a different search or clear the filters."
+                  actionLabel="Clear filters"
+                  actionIcon="pi pi-filter-slash"
+                  (action)="clearFilters()"
+                />
+              } @else {
+                <app-empty-state
+                  icon="pi pi-search"
+                  title="No matching items"
+                  message="Try a different name, code or barcode."
+                />
+              }
+            } @else {
+              <app-empty-state
+                icon="pi pi-box"
+                title="No items yet"
+                message="Add the products you sell and the raw materials you buy."
+                actionLabel="Add Item"
+                actionIcon="pi pi-plus"
+                (action)="openForm()"
+              />
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<app-item-form [(visible)]="formVisible" [item]="editing()" (saved)="load()" />

@@ -1,0 +1,107 @@
+.login-bg {
+  --background: radial-gradient(1200px 500px at 50% -10%, #ffe98a 0%, #fff4c2 35%, #f6f5f1 70%);
+}
+
+.wrap {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem 1rem;
+  gap: 1rem;
+}
+
+.card {
+  width: 100%;
+  max-width: 400px;
+  background: #fff;
+  border: 1px solid var(--border-soft);
+  border-radius: 18px;
+  box-shadow: 0 12px 40px rgba(107, 70, 0, 0.12);
+  padding: 2rem 1.75rem 1.5rem;
+  text-align: center;
+}
+
+.logo {
+  display: block;
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 0.75rem;
+  border-radius: 50%;
+  background: #000;
+  object-fit: cover;
+  box-shadow: 0 6px 16px rgba(107, 70, 0, 0.3);
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.45rem;
+}
+
+.sub {
+  margin: 0.25rem 0 1.5rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  text-align: left;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.remember {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.link-btn {
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+
+:host ::ng-deep .login-btn {
+  width: 100%;
+  padding: 0.75rem;
+  font-weight: 700;
+}
+
+:host ::ng-deep .p-password,
+:host ::ng-deep .p-password-input {
+  width: 100%;
+}
+
+.demo {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px dashed var(--border-soft);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem 0.9rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+
+  span {
+    width: 100%;
+  }
+}
+
+.foot {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-align: center;
+}

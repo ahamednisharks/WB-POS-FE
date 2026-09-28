@@ -1,0 +1,116 @@
+<div class="page">
+  <app-page-header
+    title="Unit Master"
+    subtitle="Units of measure used by items (PCS, KG, LTR …)"
+    searchPlaceholder="Search unit name or code"
+    addLabel="Add Unit"
+    (search)="onSearch($event)"
+    (add)="openForm()"
+  />
+
+  <div class="card p-0">
+    <p-table
+      [value]="loading() ? [] : rows()"
+      [lazy]="true"
+      (onLazyLoad)="onLazyLoad($event)"
+      [paginator]="true"
+      [rows]="pageSize()"
+      [first]="first()"
+      [totalRecords]="total()"
+      [rowsPerPageOptions]="pageSizeOptions"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="{first}–{last} of {totalRecords}"
+      [loading]="loading()"
+      [showLoader]="false"
+      sortField="createdAt"
+      [sortOrder]="-1"
+      dataKey="id"
+      [scrollable]="true"
+      [rowHover]="true"
+      [tableStyle]="{ 'min-width': '44rem' }"
+    >
+      <ng-template #header>
+        <tr>
+          <th style="width: 4.5rem">S.No</th>
+          <th pSortableColumn="name">Unit Name <p-sortIcon field="name" /></th>
+          <th pSortableColumn="shortCode">Short Code <p-sortIcon field="shortCode" /></th>
+          <th pSortableColumn="allowDecimal">Decimal <p-sortIcon field="allowDecimal" /></th>
+          <th pSortableColumn="status">Status <p-sortIcon field="status" /></th>
+          <th class="text-right" style="width: 7rem">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-unit let-i="rowIndex">
+        <tr>
+          <td class="muted">{{ i + 1 }}</td>
+          <td class="bold">{{ unit.name }}</td>
+          <td><code class="code">{{ unit.shortCode }}</code></td>
+          <td>
+            @if (unit.allowDecimal) {
+              <span class="yes"><i class="pi pi-check-circle" aria-hidden="true"></i> Yes</span>
+            } @else {
+              <span class="muted">No</span>
+            }
+          </td>
+          <td><app-status-tag [status]="unit.status" /></td>
+          <td>
+            <div class="row-actions">
+              <p-button
+                icon="pi pi-pencil"
+                [text]="true"
+                [rounded]="true"
+                pTooltip="Edit"
+                tooltipPosition="top"
+                ariaLabel="Edit unit"
+                (onClick)="openForm(unit)"
+              />
+              <p-button
+                icon="pi pi-trash"
+                severity="danger"
+                [text]="true"
+                [rounded]="true"
+                pTooltip="Delete"
+                tooltipPosition="top"
+                ariaLabel="Delete unit"
+                (onClick)="remove(unit)"
+              />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template #loadingbody>
+        @for (r of skeletonRows; track r) {
+          <tr appSkeletonRow [cols]="6"></tr>
+        }
+      </ng-template>
+
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="6">
+            @if (error(); as e) {
+              <app-empty-state
+                icon="pi pi-exclamation-triangle"
+                title="Could not load units"
+                [message]="e"
+                actionLabel="Retry"
+                (action)="load()"
+              />
+            } @else {
+              <app-empty-state
+                icon="pi pi-sliders-h"
+                title="No units found"
+                message="Add units such as Pieces (PCS) or Kilogram (KG) before creating items."
+                actionLabel="Add Unit"
+                actionIcon="pi pi-plus"
+                (action)="openForm()"
+              />
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<app-unit-form [(visible)]="formVisible" [unit]="editing()" (saved)="load()" />

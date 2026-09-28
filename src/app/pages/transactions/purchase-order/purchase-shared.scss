@@ -1,0 +1,319 @@
+/* Shared by the Purchase Order / Purchase Entry forms and view dialogs. */
+
+.supplier-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.9rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+
+  strong {
+    color: var(--text-main);
+    font-weight: 600;
+  }
+}
+
+.tax-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--brand-softer);
+  border: 1px solid #ffe98a;
+  color: #5a3d00;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 1.25rem 0 0.6rem;
+
+  .form-section-title {
+    flex: 1 1 auto;
+    margin: 0;
+  }
+}
+
+/* ---------- item rows: grid "table" on desktop, stacked cards on phones ---------- */
+.lines-scroll {
+  overflow-x: auto;
+}
+
+.lines {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  min-width: var(--lines-min, 50rem);
+}
+
+.po-lines {
+  --cols: 2rem minmax(13rem, 3fr) 3.5rem minmax(7rem, 1fr) minmax(8rem, 1.2fr) 4rem minmax(7rem, 1fr) 2.5rem;
+  --lines-min: 52rem;
+}
+
+.pe-lines {
+  --cols: 2rem minmax(12rem, 3fr) 4.5rem minmax(7rem, 1fr) 3.5rem minmax(8rem, 1.2fr) 5.5rem 8.5rem minmax(7rem, 1fr) 2.5rem;
+  --lines-min: 66rem;
+}
+
+.line-head,
+.line {
+  display: grid;
+  grid-template-columns: var(--cols);
+  gap: 0.5rem;
+  align-items: start;
+  padding: 0.5rem 0.75rem;
+}
+
+.line-head {
+  background: #faf8f2;
+  border-radius: 10px 10px 0 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #4b4f55;
+  white-space: nowrap;
+}
+
+.line {
+  border-top: 1px solid var(--border-soft);
+
+  .field {
+    gap: 0.2rem;
+  }
+}
+
+.cell-text {
+  min-height: 2.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.cell-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.card-only {
+  display: none;
+}
+
+.c-no {
+  color: var(--text-muted);
+}
+
+.c-amount {
+  justify-content: flex-end;
+}
+
+.as-cards {
+  .lines {
+    min-width: 0;
+    border: none;
+    gap: 0.75rem;
+  }
+
+  .line-head {
+    display: none;
+  }
+
+  .line {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem 0.75rem;
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    padding: 0.75rem;
+    background: #fff;
+  }
+
+  .c-no {
+    order: -2;
+    min-height: 0;
+    font-weight: 700;
+    color: var(--text-main);
+  }
+
+  .c-remove {
+    order: -1;
+    justify-self: end;
+  }
+
+  .c-item,
+  .c-amount {
+    grid-column: 1 / -1;
+  }
+
+  .c-meta {
+    order: 1;
+  }
+
+  .c-amount {
+    order: 2;
+    justify-content: space-between;
+    border-top: 1px dashed var(--border-soft);
+    padding-top: 0.45rem;
+    min-height: 0;
+  }
+
+  .cell-text {
+    min-height: 0;
+  }
+
+  .cell-label {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
+  .card-only {
+    display: inline;
+  }
+}
+
+/* ---------- notes + totals ---------- */
+.bottom-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 23rem);
+  gap: 1rem 1.5rem;
+  margin-top: 1.25rem;
+  align-items: start;
+
+  @media (max-width: 767px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.totals {
+  background: #faf8f2;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.kv {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  font-variant-numeric: tabular-nums;
+
+  > span:first-child,
+  > label {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+
+  p-inputnumber,
+  p-select {
+    width: 10rem;
+    flex: 0 0 auto;
+  }
+
+  &.grand {
+    border-top: 1px solid var(--border-soft);
+    padding-top: 0.5rem;
+    margin-top: 0.15rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+
+    > span:first-child {
+      color: var(--text-main);
+      font-size: 1rem;
+    }
+  }
+}
+
+.kv-error {
+  text-align: right;
+}
+
+/* ---------- view dialogs ---------- */
+.view-alert {
+  margin-bottom: 1rem;
+}
+
+.view-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.dl > span.note-text {
+  font-weight: 400;
+  white-space: pre-line;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.8rem 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.dl {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+
+  > span:first-child {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  > span:last-child {
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+}
+
+.view-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+}
+
+.view-table {
+  width: 100%;
+  min-width: 36rem;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+
+  th,
+  td {
+    padding: 0.5rem 0.65rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-soft);
+    white-space: nowrap;
+  }
+
+  th {
+    background: #faf8f2;
+    font-size: 0.78rem;
+    color: #4b4f55;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+}

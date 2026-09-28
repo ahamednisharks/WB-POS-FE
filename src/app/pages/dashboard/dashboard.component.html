@@ -1,0 +1,266 @@
+<div class="page">
+  <app-page-header
+    title="Dashboard"
+    [subtitle]="periodLabel()"
+    [showSearch]="false"
+    [showAdd]="false"
+  >
+    <p-button headerActions label="New Bill" icon="pi pi-plus" (onClick)="newBill()" />
+    <div class="filter-bar">
+      <app-date-range-filter
+        [(preset)]="preset"
+        [(range)]="range"
+        (changed)="load()"
+        label="Period"
+      />
+    </div>
+  </app-page-header>
+
+  @if (error(); as e) {
+    <div class="card">
+      <app-empty-state
+        icon="pi pi-exclamation-triangle"
+        title="Could not load the dashboard"
+        [message]="e"
+        actionLabel="Retry"
+        (action)="load()"
+      />
+    </div>
+  } @else if (data(); as d) {
+    <div class="dash" [class.refreshing]="loading()" [attr.aria-busy]="loading()">
+      <!-- KPI cards -->
+      <section class="stat-grid" aria-label="Sales summary">
+        <div class="stat-card">
+          <span class="stat-label">
+            <span class="stat-icon tone-brand"
+              ><i class="pi pi-indian-rupee" aria-hidden="true"></i
+            ></span>
+            Total Sales
+          </span>
+          <span class="stat-value">{{ d.totalSales | inr }}</span>
+          <span class="stat-sub">Completed bills</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">
+            <span class="stat-icon tone-upi"><i class="pi pi-receipt" aria-hidden="true"></i></span>
+            Total Bills
+          </span>
+          <span class="stat-value">{{ d.totalBills }}</span>
+          <span class="stat-sub">{{ d.totalBills === 1 ? 'bill' : 'bills' }} completed</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">
+            <span class="stat-icon tone-card"
+              ><i class="pi pi-calculator" aria-hidden="true"></i
+            ></span>
+            Average Bill
+          </span>
+          <span class="stat-value">{{ d.averageBill | inr }}</span>
+          <span class="stat-sub">Per completed bill</span>
+        </div>
+        <div
+          class="stat-card clickable"
+          role="link"
+          tabindex="0"
+          aria-label="Cancelled bills — open the cancelled orders list"
+          (click)="openCancelled()"
+          (keydown.enter)="openCancelled()"
+        >
+          <span class="stat-label">
+            <span class="stat-icon tone-danger"
+              ><i class="pi pi-times-circle" aria-hidden="true"></i
+            ></span>
+            Cancelled
+            <i class="pi pi-arrow-right go" aria-hidden="true"></i>
+          </span>
+          <span class="stat-value">{{ d.cancelledCount }}</span>
+          <span class="stat-sub">{{ d.cancelledAmount | inr }} · view bills</span>
+        </div>
+      </section>
+
+      @if (d.totalBills > 0) {
+        <!-- Charts -->
+        <div class="dash-row">
+          <section class="card chart-card" aria-labelledby="split-title">
+            <div class="card-head">
+              <h2 id="split-title" class="card-title">Payment split</h2>
+              <span class="muted small">Collected {{ splitTotal() | inr }}</span>
+            </div>
+            <div class="donut-box">
+              <p-chart
+                type="doughnut"
+                [data]="donutData()"
+                [options]="donutOptions"
+                height="210px"
+                ariaLabel="Payment split doughnut chart: cash, UPI and card"
+              />
+              <div class="donut-center" aria-hidden="true">
+                <span class="muted small">Total</span>
+                <strong class="num">{{ splitTotal() | inr: true }}</strong>
+              </div>
+            </div>
+            <ul class="legend" aria-label="Payment split values">
+              @for (s of split(); track s.key) {
+                <li>
+                  <span class="swatch" [style.background]="s.color" aria-hidden="true"></span>
+                  <span class="legend-label">{{ s.label }}</span>
+                  <span class="num legend-value">{{ s.amount | inr }}</span>
+                  <span class="num muted legend-pct">{{ s.pct }}%</span>
+                </li>
+              }
+            </ul>
+          </section>
+
+          <section class="card chart-card" aria-labelledby="hour-title">
+            <div class="card-head">
+              <h2 id="hour-title" class="card-title">Sales by hour</h2>
+              @if (peak(); as p) {
+                <span class="muted small">Peak {{ p.label }} · {{ p.amount | inr }}</span>
+              }
+            </div>
+            @if (multiDay()) {
+              <p class="muted small chart-note">All days in the period combined</p>
+            }
+            <div class="bar-box">
+              <p-chart
+                type="bar"
+                [data]="barData()"
+                [options]="barOptions"
+                height="280px"
+                ariaLabel="Bar chart of sales amount for each hour from 7 AM to 11 PM"
+              />
+            </div>
+          </section>
+        </div>
+
+        <!-- Tables -->
+        <div class="dash-row">
+          <section class="card p-0" aria-labelledby="top-title">
+            <h2 id="top-title" class="card-title table-title">Top 5 items</h2>
+            <p-table
+              [value]="d.topItems"
+              size="small"
+              [scrollable]="true"
+              [tableStyle]="{ 'min-width': '22rem' }"
+            >
+              <ng-template #header>
+                <tr>
+                  <th style="width: 2.5rem">#</th>
+                  <th>Item</th>
+                  <th class="text-right">Qty</th>
+                  <th class="text-right">Amount</th>
+                </tr>
+              </ng-template>
+              <ng-template #body let-item let-i="rowIndex">
+                <tr>
+                  <td class="muted">{{ i + 1 }}</td>
+                  <td class="bold">{{ item.name }}</td>
+                  <td class="text-right num">{{ item.qty | qty }}</td>
+                  <td class="text-right num">{{ item.amount | inr }}</td>
+                </tr>
+              </ng-template>
+              <ng-template #emptymessage>
+                <tr>
+                  <td colspan="4">
+                    <app-empty-state [compact]="true" icon="pi pi-box" title="No items sold" />
+                  </td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </section>
+
+          <section class="card p-0" aria-labelledby="recent-title">
+            <h2 id="recent-title" class="card-title table-title">Recent bills</h2>
+            <p-table
+              [value]="d.recentBills"
+              size="small"
+              [scrollable]="true"
+              [rowHover]="true"
+              [tableStyle]="{ 'min-width': multiDay() ? '28rem' : '24rem' }"
+            >
+              <ng-template #header>
+                <tr>
+                  <th>Bill No</th>
+                  <th>{{ multiDay() ? 'Date / Time' : 'Time' }}</th>
+                  <th>Cashier</th>
+                  <th class="text-right">Amount</th>
+                </tr>
+              </ng-template>
+              <ng-template #body let-bill>
+                <tr
+                  class="clickable-row"
+                  tabindex="0"
+                  [attr.aria-label]="'Open bill ' + bill.billNo"
+                  (click)="openBill(bill)"
+                  (keydown.enter)="openBill(bill)"
+                >
+                  <td>
+                    <span class="bill-no">{{ bill.billNo }}</span>
+                  </td>
+                  <td class="nowrap">
+                    {{ multiDay() ? (bill.billDate | istDateTime) : (bill.billDate | istTime) }}
+                  </td>
+                  <td class="nowrap">{{ bill.cashierName }}</td>
+                  <td class="text-right num bold">{{ bill.grandTotal | inr }}</td>
+                </tr>
+              </ng-template>
+              <ng-template #emptymessage>
+                <tr>
+                  <td colspan="4">
+                    <app-empty-state [compact]="true" icon="pi pi-receipt" title="No bills yet" />
+                  </td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </section>
+        </div>
+      } @else {
+        <div class="card">
+          <app-empty-state
+            icon="pi pi-chart-bar"
+            title="No sales in this period"
+            [message]="
+              d.cancelledCount > 0
+                ? 'Only cancelled bills were found. Completed bills will show charts and top items here.'
+                : 'Charts, top items and recent bills appear here once bills are completed.'
+            "
+            actionLabel="New Bill"
+            actionIcon="pi pi-plus"
+            (action)="newBill()"
+          />
+        </div>
+      }
+    </div>
+  } @else {
+    <!-- First load skeleton -->
+    <div class="dash" aria-busy="true">
+      <section class="stat-grid">
+        @for (c of skeletonCards; track c) {
+          <div class="stat-card" aria-hidden="true">
+            <p-skeleton width="50%" height="0.9rem" />
+            <p-skeleton width="65%" height="1.6rem" />
+            <p-skeleton width="40%" height="0.75rem" />
+          </div>
+        }
+      </section>
+      <div class="dash-row">
+        @for (c of [0, 1]; track c) {
+          <div class="card sk-stack" aria-hidden="true">
+            <p-skeleton width="40%" height="1rem" />
+            <p-skeleton width="100%" height="280px" />
+          </div>
+        }
+      </div>
+      <div class="dash-row">
+        @for (c of [0, 1]; track c) {
+          <div class="card sk-stack" aria-hidden="true">
+            <p-skeleton width="35%" height="1rem" />
+            @for (r of skeletonRows; track r) {
+              <p-skeleton width="100%" height="1.4rem" />
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

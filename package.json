@@ -1,0 +1,48 @@
+{
+  "name": "wb-pos-frontend",
+  "version": "0.0.0",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "build": "ng build",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test",
+    "cap:sync": "ng build && npx cap sync",
+    "android": "ng build && npx cap sync android && npx cap open android"
+  },
+  "private": true,
+  "packageManager": "npm@11.3.0",
+  "dependencies": {
+    "@angular/cdk": "^21.2.14",
+    "@angular/common": "^21.2.0",
+    "@angular/compiler": "^21.2.0",
+    "@angular/core": "^21.2.0",
+    "@angular/forms": "^21.2.0",
+    "@angular/platform-browser": "^21.2.0",
+    "@angular/router": "^21.2.0",
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/ios": "^8.5.2",
+    "@ionic/angular": "^8.8.19",
+    "@primeuix/themes": "^2.0.3",
+    "chart.js": "^4.5.1",
+    "ionicons": "^8.1.0",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
+    "primeicons": "^7.0.0",
+    "primeng": "^21.1.10",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0",
+    "write-excel-file": "^4.1.1",
+    "zone.js": "~0.16.0"
+  },
+  "devDependencies": {
+    "@angular/build": "^21.2.24",
+    "@angular/cli": "^21.2.24",
+    "@angular/compiler-cli": "^21.2.0",
+    "@capacitor/cli": "^8.5.2",
+    "prettier": "^3.8.1",
+    "typescript": "~5.9.2"
+  }
+}

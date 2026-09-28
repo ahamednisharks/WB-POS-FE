@@ -1,0 +1,176 @@
+@let c = cart.calc();
+<section class="cart" [class.compact]="compact()" aria-label="Current bill">
+  <header class="cart-head">
+    <div class="head-text">
+      <div class="bill-title">
+        @if (cart.heldBillNo(); as held) {
+          <i class="pi pi-play" aria-hidden="true"></i> Resumed {{ held }}
+        } @else {
+          New Bill
+        }
+      </div>
+      <div class="meta">{{ now() | istDateTime }} · {{ auth.user()?.name }}</div>
+      @if (cart.lastBillNo(); as last) {
+        <div class="last">Last saved: <strong>{{ last }}</strong></div>
+      }
+    </div>
+    <p-button
+      label="Held"
+      icon="pi pi-pause"
+      size="small"
+      [outlined]="true"
+      severity="secondary"
+      [badge]="heldCount() ? '' + heldCount() : ''"
+      badgeSeverity="warn"
+      ariaLabel="Held bills"
+      (onClick)="showHeld.emit()"
+    />
+  </header>
+
+  <div class="customer">
+    <div class="cust-field">
+      <i class="pi pi-phone" aria-hidden="true"></i>
+      <input
+        pInputText
+        type="tel"
+        inputmode="numeric"
+        maxlength="10"
+        placeholder="Customer mobile"
+        aria-label="Customer mobile (optional)"
+        [ngModel]="cart.customerMobile()"
+        (ngModelChange)="onMobileChange($event)"
+      />
+      @if (lookingUp()) {
+        <i class="pi pi-spin pi-spinner looking" aria-hidden="true"></i>
+      }
+    </div>
+    <div class="cust-field">
+      <i class="pi pi-user" aria-hidden="true"></i>
+      <input
+        pInputText
+        maxlength="60"
+        placeholder="Customer name"
+        aria-label="Customer name (optional)"
+        [ngModel]="cart.customerName()"
+        (ngModelChange)="cart.customerName.set($event)"
+      />
+    </div>
+    @if (cart.customerError(); as err) {
+      <small class="error-text">{{ err }}</small>
+    }
+  </div>
+
+  <div class="lines" role="list">
+    @for (line of cart.lines(); track line.lineId) {
+      <div class="line" role="listitem">
+        <div class="info">
+          <div class="name">
+            @if (line.kind === 'COMBO') {
+              <i class="pi pi-gift combo-icon" aria-hidden="true"></i>
+            }
+            {{ line.name }}
+          </div>
+          <div class="rate">{{ line.rate | inr }} / {{ line.unitCode }}</div>
+        </div>
+        <div class="stepper">
+          <button type="button" class="step" (click)="cart.step(line.lineId, -1)" [attr.aria-label]="'Decrease ' + line.name">
+            <i class="pi pi-minus" aria-hidden="true"></i>
+          </button>
+          <button
+            type="button"
+            class="qty"
+            (click)="editQty.emit(line)"
+            [attr.aria-label]="'Quantity ' + line.qty + ', tap to edit'"
+          >
+            {{ line.qty | qty }}@if (line.allowDecimal) {<small>{{ line.unitCode }}</small>}
+          </button>
+          <button type="button" class="step" (click)="cart.step(line.lineId, 1)" [attr.aria-label]="'Increase ' + line.name">
+            <i class="pi pi-plus" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="amt num">{{ lineAmount(line) | inr }}</div>
+        <button type="button" class="rm" (click)="cart.remove(line.lineId)" [attr.aria-label]="'Remove ' + line.name">
+          <i class="pi pi-times" aria-hidden="true"></i>
+        </button>
+      </div>
+    } @empty {
+      <div class="empty">
+        <i class="pi pi-shopping-cart" aria-hidden="true"></i>
+        <p>Cart is empty</p>
+        <small>Tap an item, search, or scan a barcode to add it.</small>
+      </div>
+    }
+  </div>
+
+  <div class="totals">
+    <div class="row"><span>Sub Total</span><span class="num">{{ c.subTotal | inr }}</span></div>
+    <div class="row discount">
+      <span class="disc-label">
+        Discount
+        <p-selectbutton
+          [options]="discountTypes"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="cart.discountType()"
+          (ngModelChange)="onDiscountType($event)"
+          [allowEmpty]="false"
+          size="small"
+        />
+      </span>
+      <p-inputnumber
+        [ngModel]="cart.discountValue() || null"
+        (ngModelChange)="onDiscountValue($event)"
+        [min]="0"
+        [maxFractionDigits]="2"
+        [placeholder]="cart.discountType() === 'PERCENT' ? '0 %' : '₹ 0'"
+        inputStyleClass="disc-input"
+        ariaLabel="Discount value"
+        [disabled]="cart.isEmpty()"
+      />
+    </div>
+    @if (cart.discountError(); as err) {
+      <small class="error-text">{{ err }}</small>
+    }
+    @if (c.discountAmount > 0) {
+      <div class="row less"><span>Less discount</span><span class="num">-{{ c.discountAmount | inr }}</span></div>
+    }
+    <div class="row muted small"><span>Taxable value</span><span class="num">{{ c.taxableAmount | inr }}</span></div>
+    <div class="row small"><span>CGST</span><span class="num">{{ c.cgst | inr }}</span></div>
+    <div class="row small"><span>SGST</span><span class="num">{{ c.sgst | inr }}</span></div>
+    <div class="row small"><span>Round Off</span><span class="num">{{ c.roundOff | inr }}</span></div>
+    <div class="grand">
+      <span>Grand Total</span>
+      <span class="num">{{ c.grandTotal | inr }}</span>
+    </div>
+  </div>
+
+  <div class="actions">
+    <p-button
+      icon="pi pi-trash"
+      label="Clear"
+      severity="secondary"
+      [outlined]="true"
+      [disabled]="cart.isEmpty() || saving()"
+      (onClick)="clearCart.emit()"
+    />
+    <p-button
+      icon="pi pi-pause"
+      label="Hold"
+      severity="warn"
+      [outlined]="true"
+      pTooltip="Hold bill (F8)"
+      tooltipPosition="top"
+      [disabled]="cart.isEmpty() || saving()"
+      (onClick)="hold.emit()"
+    />
+    <p-button
+      icon="pi pi-wallet"
+      [label]="'Pay ' + (c.grandTotal | inr)"
+      styleClass="pay-btn"
+      pTooltip="Pay (F4)"
+      tooltipPosition="top"
+      [disabled]="!cart.canCheckout() || saving()"
+      (onClick)="pay.emit()"
+    />
+  </div>
+</section>

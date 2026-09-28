@@ -1,0 +1,212 @@
+<div class="page">
+  <app-page-header
+    title="Purchase Entries"
+    subtitle="Goods received from suppliers — adds stock and tracks what you owe"
+    searchPlaceholder="Search PE no, invoice no, supplier or PO"
+    addLabel="New Entry"
+    (search)="onSearch($event)"
+    (add)="openForm()"
+  >
+    <div class="filter-bar">
+      <app-date-range-filter [(preset)]="preset" [(range)]="range" label="PE Date" (changed)="applyFilters()" />
+      <div class="filter">
+        <label for="pe-f-supplier">Supplier</label>
+        <p-select
+          inputId="pe-f-supplier"
+          [options]="suppliers()"
+          optionLabel="name"
+          optionValue="id"
+          [filter]="true"
+          [showClear]="true"
+          placeholder="All suppliers"
+          [ngModel]="supplierId()"
+          (ngModelChange)="onSupplierFilter($event)"
+        />
+      </div>
+      <div class="filter">
+        <label for="pe-f-status">Payment Status</label>
+        <p-select
+          inputId="pe-f-status"
+          [options]="paymentStatusOptions"
+          optionLabel="label"
+          optionValue="value"
+          [showClear]="true"
+          placeholder="All"
+          [ngModel]="paymentStatus()"
+          (ngModelChange)="onPaymentStatusFilter($event)"
+        />
+      </div>
+    </div>
+  </app-page-header>
+
+  <div class="card p-0">
+    <p-table
+      [value]="loading() ? [] : rows()"
+      [lazy]="true"
+      (onLazyLoad)="onLazyLoad($event)"
+      [paginator]="true"
+      [rows]="pageSize()"
+      [first]="first()"
+      [totalRecords]="total()"
+      [rowsPerPageOptions]="pageSizeOptions"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="{first}–{last} of {totalRecords}"
+      [loading]="loading()"
+      [showLoader]="false"
+      sortField="createdAt"
+      [sortOrder]="-1"
+      dataKey="id"
+      [scrollable]="true"
+      [rowHover]="true"
+      [tableStyle]="{ 'min-width': '84rem' }"
+    >
+      <ng-template #header>
+        <tr>
+          <th pSortableColumn="peNo">PE No <p-sortIcon field="peNo" /></th>
+          <th pSortableColumn="peDate">PE Date <p-sortIcon field="peDate" /></th>
+          <th pSortableColumn="supplierName">Supplier <p-sortIcon field="supplierName" /></th>
+          <th pSortableColumn="invoiceNo">Supplier Invoice No <p-sortIcon field="invoiceNo" /></th>
+          <th pSortableColumn="poNo">PO No <p-sortIcon field="poNo" /></th>
+          <th pSortableColumn="grandTotal" class="text-right">Grand Total <p-sortIcon field="grandTotal" /></th>
+          <th pSortableColumn="paidAmount" class="text-right">Paid <p-sortIcon field="paidAmount" /></th>
+          <th pSortableColumn="balance" class="text-right">Balance <p-sortIcon field="balance" /></th>
+          <th pSortableColumn="paymentStatus">Payment Status <p-sortIcon field="paymentStatus" /></th>
+          <th class="text-right" style="width: 13rem">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-pe>
+        <tr>
+          <td>
+            <button type="button" class="link-btn nowrap" (click)="view(pe)">{{ pe.peNo }}</button>
+          </td>
+          <td class="nowrap">{{ pe.peDate | istDate }}</td>
+          <td class="bold">{{ pe.supplierName }}</td>
+          <td>
+            <span class="nowrap">{{ pe.invoiceNo }}</span>
+            <div class="muted small">{{ pe.invoiceDate | istDate }}</div>
+          </td>
+          <td class="nowrap">{{ pe.poNo || '—' }}</td>
+          <td class="text-right num bold">{{ pe.grandTotal | inr }}</td>
+          <td class="text-right num">{{ pe.paidAmount | inr }}</td>
+          <td class="text-right num" [class.low-stock]="pe.balance > 0">{{ pe.balance | inr }}</td>
+          <td>
+            <app-status-tag [status]="pe.paymentStatus" />
+            @if (pe.balance > 0 && pe.dueDate) {
+              <div class="small nowrap" [class.low-stock]="isOverdue(pe)" [class.muted]="!isOverdue(pe)">
+                {{ isOverdue(pe) ? 'Overdue' : 'Due' }} {{ pe.dueDate | istDate }}
+              </div>
+            }
+          </td>
+          <td>
+            <div class="row-actions">
+              <p-button
+                icon="pi pi-eye"
+                [text]="true"
+                [rounded]="true"
+                pTooltip="View"
+                tooltipPosition="top"
+                ariaLabel="View purchase entry"
+                (onClick)="view(pe)"
+              />
+              @if (sameDay(pe)) {
+                <p-button
+                  icon="pi pi-pencil"
+                  [text]="true"
+                  [rounded]="true"
+                  pTooltip="Edit (same day only)"
+                  tooltipPosition="top"
+                  ariaLabel="Edit purchase entry"
+                  (onClick)="openForm(pe)"
+                />
+              }
+              @if (pe.balance > 0) {
+                <p-button
+                  icon="pi pi-wallet"
+                  severity="success"
+                  [text]="true"
+                  [rounded]="true"
+                  pTooltip="Add Payment"
+                  tooltipPosition="top"
+                  ariaLabel="Add payment"
+                  (onClick)="openPayment(pe)"
+                />
+              }
+              <p-button
+                icon="pi pi-print"
+                severity="secondary"
+                [text]="true"
+                [rounded]="true"
+                pTooltip="Print"
+                tooltipPosition="top"
+                ariaLabel="Print purchase entry"
+                (onClick)="print(pe)"
+              />
+              @if (sameDay(pe)) {
+                <p-button
+                  icon="pi pi-trash"
+                  severity="danger"
+                  [text]="true"
+                  [rounded]="true"
+                  pTooltip="Delete (same day only)"
+                  tooltipPosition="top"
+                  ariaLabel="Delete purchase entry"
+                  (onClick)="remove(pe)"
+                />
+              }
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template #footer>
+        @if (sums(); as s) {
+          @if (!loading() && total() > 0) {
+            <tr>
+              <td colspan="5">Total · {{ s.count }} {{ s.count === 1 ? 'entry' : 'entries' }}</td>
+              <td class="text-right num">{{ s.grandTotal | inr }}</td>
+              <td class="text-right num">{{ s.paid | inr }}</td>
+              <td class="text-right num">{{ s.balance | inr }}</td>
+              <td colspan="2"></td>
+            </tr>
+          }
+        }
+      </ng-template>
+
+      <ng-template #loadingbody>
+        @for (r of skeletonRows; track r) {
+          <tr appSkeletonRow [cols]="10"></tr>
+        }
+      </ng-template>
+
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="10">
+            @if (error(); as e) {
+              <app-empty-state
+                icon="pi pi-exclamation-triangle"
+                title="Could not load purchase entries"
+                [message]="e"
+                actionLabel="Retry"
+                (action)="refresh()"
+              />
+            } @else {
+              <app-empty-state
+                icon="pi pi-truck"
+                title="No purchase entries found"
+                message="No entries match these filters. Record goods received from a supplier to add stock."
+                actionLabel="New Entry"
+                actionIcon="pi pi-plus"
+                (action)="openForm()"
+              />
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<app-pe-form [(visible)]="formVisible" [pe]="editing()" [fromPo]="fromPo()" (saved)="onSaved($event)" />
+<app-pe-view [(visible)]="viewVisible" [pe]="viewing()" (addPayment)="openPayment($event)" />
+<app-pe-payment [(visible)]="payVisible" [pe]="paying()" (paid)="onPaid($event)" />

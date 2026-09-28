@@ -1,0 +1,221 @@
+<app-form-dialog [(visible)]="visible" [header]="item() ? 'Edit Item' : 'Add Item'" width="780px" [maximizable]="true">
+  <form [formGroup]="form" (ngSubmit)="save()" class="form-grid" novalidate>
+    <div class="form-section-title">Basic details</div>
+
+    <div class="field">
+      <label for="item-code">Item Code</label>
+      <input
+        pInputText
+        id="item-code"
+        formControlName="code"
+        placeholder="Auto (e.g. ITM0001)"
+        maxlength="20"
+        style="text-transform: uppercase"
+      />
+      <small class="hint">Suggested automatically — you can change it. Leave blank to auto-assign.</small>
+      <app-field-error
+        [control]="form.controls.code"
+        label="Item code"
+        [messages]="{ pattern: 'Use letters, numbers or - only' }"
+      />
+    </div>
+
+    <div class="field">
+      <label for="item-name">Item Name <span class="req">*</span></label>
+      <input pInputText id="item-name" formControlName="name" placeholder="e.g. Black Forest Cake" maxlength="60" />
+      <app-field-error [control]="form.controls.name" label="Item name" />
+    </div>
+
+    <div class="field">
+      <label for="item-type">Item Type <span class="req">*</span></label>
+      <p-select
+        inputId="item-type"
+        [options]="typeOptions"
+        optionLabel="label"
+        optionValue="value"
+        formControlName="type"
+        placeholder="Select type"
+      />
+      <app-field-error [control]="form.controls.type" label="Item type" />
+    </div>
+
+    <div class="field">
+      <label for="item-category">Category <span class="req">*</span></label>
+      <p-select
+        inputId="item-category"
+        [options]="categoryOptions()"
+        optionLabel="label"
+        optionValue="value"
+        formControlName="categoryId"
+        [filter]="true"
+        filterBy="label"
+        [loading]="loadingOptions()"
+        placeholder="Select category"
+        emptyMessage="No active categories — add one in Category first"
+      />
+      <app-field-error [control]="form.controls.categoryId" label="Category" />
+    </div>
+
+    <div class="field">
+      <label for="item-unit">Unit <span class="req">*</span></label>
+      <p-select
+        inputId="item-unit"
+        [options]="unitOptions()"
+        optionLabel="label"
+        optionValue="value"
+        formControlName="unitId"
+        [filter]="true"
+        filterBy="label"
+        [loading]="loadingOptions()"
+        placeholder="Select unit"
+        emptyMessage="No active units — add one in Unit Master first"
+      />
+      <app-field-error [control]="form.controls.unitId" label="Unit" />
+    </div>
+
+    <div class="field">
+      <label id="item-status-label">Status</label>
+      <p-selectbutton
+        [options]="statusOptions"
+        optionLabel="label"
+        optionValue="value"
+        formControlName="status"
+        [allowEmpty]="false"
+        ariaLabelledBy="item-status-label"
+      />
+    </div>
+
+    <div class="form-section-title">Price, tax &amp; codes</div>
+
+    <div class="field">
+      <label for="item-price">
+        Selling Price ₹
+        @if (!isRaw()) {
+          <span class="req">*</span>
+        }
+      </label>
+      <p-inputnumber
+        inputId="item-price"
+        formControlName="sellingPrice"
+        mode="currency"
+        currency="INR"
+        locale="en-IN"
+        [min]="0"
+        [maxFractionDigits]="2"
+        placeholder="₹0.00"
+      />
+      @if (isRaw()) {
+        <small class="hint">Not applicable — raw materials are not sold</small>
+      }
+      <app-field-error
+        [control]="form.controls.sellingPrice"
+        label="Selling price"
+        [messages]="{ min: 'Selling price must be greater than ₹0' }"
+      />
+    </div>
+
+    <div class="field">
+      <label id="item-purchase-price-label">Purchase Price ₹</label>
+      <div class="readonly-box" aria-labelledby="item-purchase-price-label">
+        @if (item(); as it) {
+          @if (it.purchasePrice > 0) {
+            {{ it.purchasePrice | inr }}
+          } @else {
+            <span class="muted">Not purchased yet</span>
+          }
+        } @else {
+          <span class="muted">Set by Purchase Entry</span>
+        }
+      </div>
+      <small class="hint">Last rate from a Purchase Entry (read-only)</small>
+    </div>
+
+    <div class="field">
+      <label for="item-gst">GST % <span class="req">*</span></label>
+      <p-select
+        inputId="item-gst"
+        [options]="gstOptions"
+        optionLabel="label"
+        optionValue="value"
+        formControlName="gstPercent"
+        placeholder="Select GST %"
+      />
+      <app-field-error [control]="form.controls.gstPercent" label="GST %" />
+    </div>
+
+    <div class="field">
+      <label for="item-incl-gst">Price Includes GST</label>
+      <div class="field-inline">
+        <p-toggleswitch inputId="item-incl-gst" formControlName="priceIncludesGst" />
+        <span class="muted small">
+          {{ form.controls.priceIncludesGst.value ? 'Yes — GST is inside the selling price' : 'No — GST is added on top' }}
+        </span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="item-hsn">HSN Code</label>
+      <input pInputText id="item-hsn" formControlName="hsnCode" placeholder="e.g. 1905" maxlength="8" inputmode="numeric" />
+      <app-field-error
+        [control]="form.controls.hsnCode"
+        label="HSN code"
+        [messages]="{ pattern: 'HSN code must be 4 to 8 digits' }"
+      />
+    </div>
+
+    <div class="field">
+      <label for="item-barcode">Barcode</label>
+      <input pInputText id="item-barcode" formControlName="barcode" placeholder="Scan or type barcode" maxlength="40" />
+      <app-field-error [control]="form.controls.barcode" label="Barcode" />
+    </div>
+
+    <div class="form-section-title">Stock</div>
+
+    <div class="field">
+      <label id="item-current-stock-label">Current Stock</label>
+      <div class="readonly-box" aria-labelledby="item-current-stock-label">
+        @if (item(); as it) {
+          @if (tracksStock()) {
+            {{ it.currentStock | qty }} {{ it.unitCode }}
+          } @else {
+            <span class="muted">Not tracked for sale items</span>
+          }
+        } @else {
+          <span class="muted">Set by Purchase Entry</span>
+        }
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="item-min-stock">Min Stock Level</label>
+      <p-inputnumber
+        inputId="item-min-stock"
+        formControlName="minStock"
+        [min]="0"
+        [minFractionDigits]="0"
+        [maxFractionDigits]="qtyDecimals()"
+        [suffix]="unitCode() ? ' ' + unitCode() : ''"
+      />
+      <small class="hint">Low-stock alert level for Raw Material / Both items</small>
+      <app-field-error [control]="form.controls.minStock" label="Min stock level" />
+    </div>
+
+    <div class="field span-all">
+      <label id="item-image-label">Image</label>
+      <app-image-picker formControlName="image" [maxMb]="1" hint="JPG or PNG, up to 1 MB" />
+      <app-field-error [control]="form.controls.image" label="Image" />
+    </div>
+    <button type="submit" hidden aria-hidden="true"></button>
+  </form>
+
+  <div dialogFooter class="dialog-footer">
+    <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="visible.set(false)" />
+    <p-button
+      label="Save"
+      icon="pi pi-check"
+      [loading]="saving()"
+      [disabled]="form.invalid || saving()"
+      (onClick)="save()"
+    />
+  </div>
+</app-form-dialog>

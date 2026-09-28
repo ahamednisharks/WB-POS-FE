@@ -1,0 +1,209 @@
+<div class="filter-bar tab-toolbar">
+  <div class="filter">
+    <label for="pay-month">Month</label>
+    <p-datepicker
+      inputId="pay-month"
+      view="month"
+      dateFormat="mm/yy"
+      [ngModel]="monthFilter()"
+      (ngModelChange)="setMonth($event)"
+      [showIcon]="true"
+      [showClear]="true"
+      [readonlyInput]="true"
+      placeholder="All months"
+      appendTo="body"
+    />
+  </div>
+  <div class="filter">
+    <label for="pay-status">Status</label>
+    <p-select
+      inputId="pay-status"
+      [options]="statusOptions"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="statusFilter()"
+      (ngModelChange)="setStatus($event)"
+      [showClear]="true"
+      placeholder="All statuses"
+      appendTo="body"
+    />
+  </div>
+  <div class="filter search-filter">
+    <label for="pay-search">Search</label>
+    <p-iconfield class="search">
+      <p-inputicon styleClass="pi pi-search" />
+      <input #q pInputText id="pay-search" type="search" placeholder="Employee name or Emp ID" (input)="search$.next(q.value)" />
+    </p-iconfield>
+  </div>
+  <p-button class="toolbar-add" label="Add Payment" icon="pi pi-plus" (onClick)="openForm()" />
+</div>
+
+<div class="table-box">
+  <p-table
+    [value]="loading() ? [] : rows()"
+    [lazy]="true"
+    (onLazyLoad)="onLazyLoad($event)"
+    [paginator]="true"
+    [rows]="pageSize()"
+    [first]="first()"
+    [totalRecords]="total()"
+    [rowsPerPageOptions]="pageSizeOptions"
+    [showCurrentPageReport]="true"
+    currentPageReportTemplate="{first}–{last} of {totalRecords}"
+    [loading]="loading()"
+    [showLoader]="false"
+    sortField="createdAt"
+    [sortOrder]="-1"
+    dataKey="id"
+    [scrollable]="true"
+    [rowHover]="true"
+    [tableStyle]="{ 'min-width': '66rem' }"
+  >
+    <ng-template #header>
+      <tr>
+        <th pSortableColumn="month" style="width: 7rem">Month <p-sortIcon field="month" /></th>
+        <th pSortableColumn="empCode" style="width: 7rem">Emp ID <p-sortIcon field="empCode" /></th>
+        <th pSortableColumn="employeeName">Name <p-sortIcon field="employeeName" /></th>
+        <th pSortableColumn="gross" class="text-right">Gross <p-sortIcon field="gross" /></th>
+        <th class="text-right">Deductions</th>
+        <th pSortableColumn="net" class="text-right">Net <p-sortIcon field="net" /></th>
+        <th pSortableColumn="status">Status <p-sortIcon field="status" /></th>
+        <th class="text-right" style="width: 11rem">Actions</th>
+      </tr>
+    </ng-template>
+
+    <ng-template #body let-p>
+      <tr>
+        <td class="nowrap">{{ p.month | monthLabel }}</td>
+        <td><span class="code">{{ p.empCode }}</span></td>
+        <td>
+          <div class="emp-cell">
+            <span class="bold">{{ p.employeeName }}</span>
+            <span class="muted small">{{ p.daysPresent }}/{{ p.workingDays }} days</span>
+          </div>
+        </td>
+        <td class="text-right num">{{ p.gross | inr }}</td>
+        <td class="text-right num">
+          @if (deductionsOf(p) > 0) {
+            <span [pTooltip]="deductionTip(p)" tooltipPosition="top">− {{ deductionsOf(p) | inr }}</span>
+          } @else {
+            <span class="muted">—</span>
+          }
+        </td>
+        <td class="text-right num bold">{{ p.net | inr }}</td>
+        <td>
+          <div class="emp-cell">
+            <app-status-tag [status]="p.status" />
+            @if (p.status === 'PAID' && p.paymentDate) {
+              <span class="muted small nowrap">
+                {{ p.paymentDate | istDate }}{{ p.paymentMode ? ' · ' + modeLabel[p.paymentMode] : '' }}
+              </span>
+            }
+          </div>
+        </td>
+        <td>
+          <div class="row-actions">
+            @if (p.status === 'PENDING') {
+              <p-button
+                icon="pi pi-pencil"
+                [text]="true"
+                [rounded]="true"
+                pTooltip="Edit"
+                tooltipPosition="top"
+                ariaLabel="Edit salary payment"
+                (onClick)="openForm(p)"
+              />
+              <p-button
+                icon="pi pi-check-circle"
+                severity="success"
+                [text]="true"
+                [rounded]="true"
+                pTooltip="Mark Paid"
+                tooltipPosition="top"
+                ariaLabel="Mark salary as paid"
+                (onClick)="markPaid(p)"
+              />
+            }
+            <p-button
+              icon="pi pi-print"
+              severity="secondary"
+              [text]="true"
+              [rounded]="true"
+              pTooltip="Print Slip"
+              tooltipPosition="top"
+              ariaLabel="Print salary slip"
+              (onClick)="printSlip(p)"
+            />
+            @if (p.status === 'PENDING') {
+              <p-button
+                icon="pi pi-trash"
+                severity="danger"
+                [text]="true"
+                [rounded]="true"
+                pTooltip="Delete"
+                tooltipPosition="top"
+                ariaLabel="Delete salary payment"
+                (onClick)="remove(p)"
+              />
+            }
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template #footer>
+      @if (totals(); as t) {
+        @if (t.count > 0 && !loading()) {
+          <tr>
+            <td colspan="3">
+              {{ month() ? 'Month total — ' + (month() | monthLabel) : 'Total — all months' }}
+              <span class="muted small">({{ t.count }} {{ t.count === 1 ? 'record' : 'records' }})</span>
+            </td>
+            <td class="text-right num">{{ t.gross | inr }}</td>
+            <td class="text-right num">{{ t.deductions > 0 ? '− ' : '' }}{{ t.deductions | inr }}</td>
+            <td class="text-right num">{{ t.net | inr }}</td>
+            <td colspan="2"></td>
+          </tr>
+        }
+      }
+    </ng-template>
+
+    <ng-template #loadingbody>
+      @for (r of skeletonRows; track r) {
+        <tr appSkeletonRow [cols]="8"></tr>
+      }
+    </ng-template>
+
+    <ng-template #emptymessage>
+      <tr>
+        <td colspan="8">
+          @if (error(); as e) {
+            <app-empty-state
+              icon="pi pi-exclamation-triangle"
+              title="Could not load salary payments"
+              [message]="e"
+              actionLabel="Retry"
+              (action)="refresh()"
+            />
+          } @else {
+            <app-empty-state
+              icon="pi pi-calendar"
+              title="No salary payments found"
+              [message]="
+                month()
+                  ? 'No salary records for ' + (month() | monthLabel) + '. Add one per employee for the month.'
+                  : 'Add a monthly salary record for each employee.'
+              "
+              actionLabel="Add Payment"
+              actionIcon="pi pi-plus"
+              (action)="openForm()"
+            />
+          }
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>
+
+<app-salary-payment-form [(visible)]="formVisible" [payment]="editing()" [defaultMonth]="month()" (saved)="refresh()" />
+<app-salary-mark-paid-dialog [(visible)]="payVisible" [payment]="paying()" (saved)="refresh()" />

@@ -1,0 +1,276 @@
+<div class="page">
+  <div class="flex items-center gap-1">
+    <p-button
+      icon="pi pi-arrow-left"
+      [text]="true"
+      [rounded]="true"
+      ariaLabel="Back to employees"
+      pTooltip="Back to employees"
+      tooltipPosition="right"
+      (onClick)="back()"
+    />
+    <h1 class="page-title">Employee Profile</h1>
+  </div>
+
+  @if (loading() && !employee()) {
+    <div class="card profile-head">
+      <p-skeleton shape="circle" size="72px" />
+      <div class="grow">
+        <p-skeleton width="12rem" height="1.4rem" />
+        <p-skeleton width="18rem" height="1rem" class="mt-1" />
+        <p-skeleton width="9rem" height="1rem" class="mt-1" />
+      </div>
+    </div>
+    <div class="card">
+      @for (r of [0, 1, 2, 3, 4]; track r) {
+        <p-skeleton height="1.1rem" class="mt-1" />
+      }
+    </div>
+  } @else if (error(); as e) {
+    <div class="card">
+      <app-empty-state
+        icon="pi pi-exclamation-triangle"
+        title="Could not load this employee"
+        [message]="e"
+        actionLabel="Retry"
+        (action)="load()"
+      />
+      <div class="text-center">
+        <button type="button" class="link-btn" (click)="back()">Back to Employee Details</button>
+      </div>
+    </div>
+  } @else if (employee(); as emp) {
+    <!-- ======================= header card ======================= -->
+    <div class="card profile-head">
+      @if (emp.photo) {
+        <img class="avatar" [src]="emp.photo" [alt]="emp.fullName" />
+      } @else {
+        <span class="avatar initials" aria-hidden="true">{{ initials(emp.fullName) }}</span>
+      }
+      <div class="grow head-info">
+        <h2>{{ emp.fullName }}</h2>
+        <div class="flex items-center gap-1 wrap muted">
+          <span class="code">{{ emp.empCode }}</span>
+          <span>{{ emp.employeeTypeName }}</span>
+          <span aria-hidden="true">·</span>
+          <span class="num"><i class="pi pi-phone small" aria-hidden="true"></i> {{ emp.mobile }}</span>
+        </div>
+        <div class="flex items-center gap-1 wrap mt-1">
+          <app-status-tag [status]="emp.status" />
+          @if (emp.status === 'RESIGNED' && emp.resignDate) {
+            <span class="small muted">Resigned on {{ emp.resignDate | istDate }}</span>
+          } @else {
+            <span class="small muted">Joined {{ emp.joiningDate | istDate }}</span>
+          }
+        </div>
+      </div>
+      <p-button label="Edit" icon="pi pi-pencil" [outlined]="true" (onClick)="formVisible.set(true)" />
+    </div>
+
+    <!-- ======================= tabs ======================= -->
+    <div class="card p-0">
+      <p-tabs [(value)]="tab" [scrollable]="true">
+        <p-tablist>
+          <p-tab value="details"><i class="pi pi-id-card" aria-hidden="true"></i> Details</p-tab>
+          <p-tab value="salary"><i class="pi pi-wallet" aria-hidden="true"></i> Salary</p-tab>
+          <p-tab value="login"><i class="pi pi-key" aria-hidden="true"></i> Login</p-tab>
+        </p-tablist>
+        <p-tabpanels>
+          <!-- ---------- Details ---------- -->
+          <p-tabpanel value="details">
+            <h3 class="section-title">Basic</h3>
+            <dl class="info-grid">
+              <div><dt>Employee ID</dt><dd><span class="code">{{ emp.empCode }}</span></dd></div>
+              <div><dt>Full Name</dt><dd>{{ emp.fullName }}</dd></div>
+              <div><dt>Employee Type</dt><dd>{{ emp.employeeTypeName }}</dd></div>
+              <div><dt>Gender</dt><dd>{{ emp.gender | enumLabel }}</dd></div>
+              <div>
+                <dt>Date of Birth</dt>
+                <dd>
+                  @if (emp.dob) {
+                    {{ emp.dob | istDate }} <span class="muted small">({{ age() }} yrs)</span>
+                  } @else {
+                    <span class="muted">—</span>
+                  }
+                </dd>
+              </div>
+            </dl>
+
+            <h3 class="section-title">Contact</h3>
+            <dl class="info-grid">
+              <div><dt>Mobile</dt><dd class="num">{{ emp.mobile }}</dd></div>
+              <div><dt>Alternate Mobile</dt><dd class="num">{{ emp.altMobile || '—' }}</dd></div>
+              <div><dt>Email</dt><dd class="break">{{ emp.email || '—' }}</dd></div>
+              <div><dt>Emergency Contact</dt><dd>{{ emp.emergencyName || '—' }} @if (emp.emergencyMobile) { <span class="num muted">({{ emp.emergencyMobile }})</span> }</dd></div>
+              <div class="wide"><dt>Address</dt><dd class="pre">{{ emp.address }}</dd></div>
+            </dl>
+
+            <h3 class="section-title">Identity &amp; Bank</h3>
+            <dl class="info-grid">
+              <div><dt>Aadhaar No.</dt><dd class="num">{{ (emp.aadhaar | aadhaarMask) || '—' }}</dd></div>
+              <div>
+                <dt>ID Proof</dt>
+                <dd>
+                  @if (emp.idProof; as f) {
+                    <a class="break" [href]="f.dataUrl" [attr.download]="f.name" target="_blank" rel="noopener">
+                      <i [class]="f.type === 'application/pdf' ? 'pi pi-file-pdf' : 'pi pi-image'" aria-hidden="true"></i>
+                      {{ f.name }}
+                    </a>
+                  } @else {
+                    <span class="muted">Not uploaded</span>
+                  }
+                </dd>
+              </div>
+              <div><dt>Bank Account No.</dt><dd class="num">{{ emp.bankAccount || '—' }}</dd></div>
+              <div><dt>IFSC</dt><dd>{{ emp.ifsc || '—' }}</dd></div>
+            </dl>
+
+            <h3 class="section-title">Employment</h3>
+            <dl class="info-grid">
+              <div><dt>Joining Date</dt><dd>{{ emp.joiningDate | istDate }}</dd></div>
+              <div><dt>Status</dt><dd><app-status-tag [status]="emp.status" /></dd></div>
+              @if (emp.status === 'RESIGNED') {
+                <div><dt>Resign Date</dt><dd>{{ (emp.resignDate | istDate) || '—' }}</dd></div>
+              }
+            </dl>
+          </p-tabpanel>
+
+          <!-- ---------- Salary ---------- -->
+          <p-tabpanel value="salary">
+            <div class="flex items-center gap-1 wrap">
+              <h3 class="section-title grow">Salary Setup</h3>
+              <p-button label="Manage salary" icon="pi pi-external-link" size="small" [text]="true" (onClick)="goTo('/employee/salary')" />
+            </div>
+            @if (setups().length) {
+              <div class="table-wrap">
+                <p-table [value]="setups()" dataKey="id" [scrollable]="true" [tableStyle]="{ 'min-width': '34rem' }" size="small">
+                  <ng-template #header>
+                    <tr>
+                      <th>Salary Type</th>
+                      <th class="text-right">Basic</th>
+                      <th class="text-right">Allowances</th>
+                      <th>Effective From</th>
+                    </tr>
+                  </ng-template>
+                  <ng-template #body let-s>
+                    <tr>
+                      <td>
+                        {{ s.salaryType | enumLabel }}
+                        @if (s.id === currentSetupId()) {
+                          <p-tag value="Current" severity="success" [rounded]="true" class="ml-tag" />
+                        }
+                      </td>
+                      <td class="text-right num">{{ s.basicSalary | inr }}{{ s.salaryType === 'DAILY' ? ' /day' : '' }}</td>
+                      <td class="text-right num">{{ s.allowances | inr }}</td>
+                      <td class="nowrap">{{ s.effectiveFrom | istDate }}</td>
+                    </tr>
+                  </ng-template>
+                </p-table>
+              </div>
+            } @else {
+              <app-empty-state
+                [compact]="true"
+                icon="pi pi-wallet"
+                title="No salary setup"
+                message="Set the salary type and basic pay for this employee in Salary Details."
+              />
+            }
+
+            <h3 class="section-title mt-2">Salary Payments</h3>
+            @if (payments().length) {
+              <div class="table-wrap">
+                <p-table [value]="payments()" dataKey="id" [scrollable]="true" [tableStyle]="{ 'min-width': '42rem' }" size="small">
+                  <ng-template #header>
+                    <tr>
+                      <th>Month</th>
+                      <th class="text-right">Days</th>
+                      <th class="text-right">Gross</th>
+                      <th class="text-right">Net</th>
+                      <th>Status</th>
+                      <th class="text-right" style="width: 4rem">Slip</th>
+                    </tr>
+                  </ng-template>
+                  <ng-template #body let-p>
+                    <tr>
+                      <td class="nowrap">{{ p.month | monthLabel }}</td>
+                      <td class="text-right num">{{ p.daysPresent }}/{{ p.workingDays }}</td>
+                      <td class="text-right num">{{ p.gross | inr }}</td>
+                      <td class="text-right num bold">{{ p.net | inr }}</td>
+                      <td>
+                        <app-status-tag [status]="p.status" />
+                        @if (p.paymentDate) {
+                          <span class="small muted nowrap"> {{ p.paymentDate | istDate }}</span>
+                        }
+                      </td>
+                      <td class="text-right">
+                        <p-button
+                          icon="pi pi-print"
+                          [text]="true"
+                          [rounded]="true"
+                          size="small"
+                          pTooltip="Print slip"
+                          tooltipPosition="left"
+                          ariaLabel="Print salary slip"
+                          (onClick)="printSlip(p)"
+                        />
+                      </td>
+                    </tr>
+                  </ng-template>
+                </p-table>
+              </div>
+            } @else {
+              <app-empty-state
+                [compact]="true"
+                icon="pi pi-calendar"
+                title="No salary payments yet"
+                message="Monthly salary records for this employee will appear here."
+              />
+            }
+          </p-tabpanel>
+
+          <!-- ---------- Login ---------- -->
+          <p-tabpanel value="login">
+            @if (login(); as l) {
+              <dl class="info-grid">
+                <div><dt>Username</dt><dd><span class="code">{{ l.username }}</span></dd></div>
+                <div><dt>Role</dt><dd><app-status-tag [status]="l.role" /></dd></div>
+                <div><dt>Status</dt><dd><app-status-tag [status]="l.status" /></dd></div>
+                <div><dt>Last Login</dt><dd>{{ l.lastLogin ? (l.lastLogin | istDateTime) : 'Never' }}</dd></div>
+              </dl>
+              <div class="mt-2">
+                <a routerLink="/employee/logins" class="small"><i class="pi pi-external-link" aria-hidden="true"></i> Manage in Login Details</a>
+              </div>
+            } @else if (employeeType()?.canLogin) {
+              <app-empty-state
+                icon="pi pi-key"
+                title="No login yet"
+                [message]="
+                  emp.status === 'ACTIVE'
+                    ? emp.employeeTypeName + ' employees can log in to the POS. Create a login for ' + emp.fullName + ' in Login Details.'
+                    : 'Resigned employees cannot be given a login.'
+                "
+                [actionLabel]="emp.status === 'ACTIVE' ? 'Go to Login Details' : ''"
+                actionIcon="pi pi-arrow-right"
+                (action)="goTo('/employee/logins')"
+              />
+            } @else {
+              <app-empty-state
+                icon="pi pi-lock"
+                title="Login not allowed"
+                [message]="
+                  emp.employeeTypeName +
+                  ' employees cannot log in. Turn on “Can Login” for this type in Employee Type to allow a login.'
+                "
+                actionLabel="Go to Employee Type"
+                actionIcon="pi pi-arrow-right"
+                (action)="goTo('/employee/types')"
+              />
+            }
+          </p-tabpanel>
+        </p-tabpanels>
+      </p-tabs>
+    </div>
+  }
+</div>
+
+<app-employee-form [(visible)]="formVisible" [employee]="employee()" (saved)="load()" />

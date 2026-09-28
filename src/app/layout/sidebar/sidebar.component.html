@@ -1,0 +1,63 @@
+<div class="brand">
+  <img class="logo" [src]="shop.logo" alt="" width="42" height="42" />
+  <div class="brand-text">
+    <strong>{{ shop.name }}</strong>
+    <span>WB-POS · Billing</span>
+  </div>
+</div>
+
+<ion-content class="nav-scroll">
+  <nav aria-label="Main menu">
+    <ul class="nav">
+      @for (item of items(); track item.label) {
+        @if (item.children) {
+          <li class="group" [class.group-active]="groupActive(item)">
+            <button
+              type="button"
+              class="nav-link group-toggle"
+              [attr.aria-expanded]="isOpen(item)"
+              (click)="toggle(item)"
+            >
+              <i [class]="item.icon" aria-hidden="true"></i>
+              <span class="label">{{ item.label }}</span>
+              <i class="pi chevron" [class.pi-chevron-down]="!isOpen(item)" [class.pi-chevron-up]="isOpen(item)" aria-hidden="true"></i>
+            </button>
+            @if (isOpen(item)) {
+              <ul class="sub">
+                @for (child of item.children; track child.label) {
+                  <li>
+                    <a
+                      class="nav-link"
+                      [routerLink]="child.route"
+                      routerLinkActive="active"
+                      #rla="routerLinkActive"
+                      [attr.aria-current]="rla.isActive ? 'page' : null"
+                      (click)="navigated()"
+                    >
+                      <i [class]="child.icon" aria-hidden="true"></i>
+                      <span class="label">{{ child.label }}</span>
+                    </a>
+                  </li>
+                }
+              </ul>
+            }
+          </li>
+        } @else {
+          <li>
+            <a
+              class="nav-link"
+              [routerLink]="item.route"
+              routerLinkActive="active"
+              #rla="routerLinkActive"
+              [attr.aria-current]="rla.isActive ? 'page' : null"
+              (click)="navigated()"
+            >
+              <i [class]="item.icon" aria-hidden="true"></i>
+              <span class="label">{{ item.label }}</span>
+            </a>
+          </li>
+        }
+      }
+    </ul>
+  </nav>
+</ion-content>

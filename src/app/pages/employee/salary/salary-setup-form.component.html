@@ -1,0 +1,95 @@
+<app-form-dialog [(visible)]="visible" [header]="setup() ? 'Edit Salary Setup' : 'Add Salary Setup'" width="600px">
+  <form [formGroup]="form" (ngSubmit)="save()" class="form-grid" novalidate>
+    <div class="field span-all">
+      <label for="ss-emp">Employee <span class="req">*</span></label>
+      <p-select
+        inputId="ss-emp"
+        formControlName="employeeId"
+        [options]="employeeOptions()"
+        optionLabel="label"
+        optionValue="value"
+        [filter]="true"
+        filterBy="label"
+        [loading]="employeesLoading()"
+        placeholder="Select employee"
+        emptyMessage="No active employees"
+        appendTo="body"
+      />
+      <app-field-error [control]="form.controls.employeeId" label="Employee" />
+    </div>
+
+    <div class="field span-all">
+      <label id="ss-type-label">Salary Type <span class="req">*</span></label>
+      <p-selectbutton
+        [options]="salaryTypeOptions"
+        optionLabel="label"
+        optionValue="value"
+        formControlName="salaryType"
+        [allowEmpty]="false"
+        ariaLabelledBy="ss-type-label"
+      />
+      <small class="hint">
+        {{ isDaily ? 'Paid per day present: wage × days present + allowances.' : 'Fixed monthly pay, pro-rated by days present.' }}
+      </small>
+    </div>
+
+    <div class="field">
+      <label for="ss-basic">{{ isDaily ? 'Daily Wage ₹' : 'Basic Salary ₹ (per month)' }} <span class="req">*</span></label>
+      <p-inputnumber
+        inputId="ss-basic"
+        formControlName="basicSalary"
+        mode="currency"
+        currency="INR"
+        locale="en-IN"
+        [min]="0"
+        [maxFractionDigits]="2"
+        placeholder="₹0.00"
+      />
+      <app-field-error
+        [control]="form.controls.basicSalary"
+        label="Basic salary"
+        [messages]="{ min: 'Basic salary must be greater than 0' }"
+      />
+    </div>
+
+    <div class="field">
+      <label for="ss-allow">Allowances ₹ (per month)</label>
+      <p-inputnumber
+        inputId="ss-allow"
+        formControlName="allowances"
+        mode="currency"
+        currency="INR"
+        locale="en-IN"
+        [min]="0"
+        [maxFractionDigits]="2"
+        placeholder="₹0.00"
+      />
+      <app-field-error [control]="form.controls.allowances" label="Allowances" />
+    </div>
+
+    <div class="field">
+      <label for="ss-from">Effective From <span class="req">*</span></label>
+      <p-datepicker
+        inputId="ss-from"
+        formControlName="effectiveFrom"
+        dateFormat="dd-mm-yy"
+        [showIcon]="true"
+        placeholder="dd-mm-yyyy"
+        appendTo="body"
+      />
+      <app-field-error [control]="form.controls.effectiveFrom" label="Effective from" />
+    </div>
+    <button type="submit" hidden aria-hidden="true"></button>
+  </form>
+
+  <div dialogFooter class="dialog-footer">
+    <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="visible.set(false)" />
+    <p-button
+      label="Save"
+      icon="pi pi-check"
+      [loading]="saving()"
+      [disabled]="form.invalid || saving()"
+      (onClick)="save()"
+    />
+  </div>
+</app-form-dialog>

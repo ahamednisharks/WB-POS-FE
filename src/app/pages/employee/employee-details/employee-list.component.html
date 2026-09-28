@@ -1,0 +1,158 @@
+<div class="page">
+  <app-page-header
+    title="Employee Details"
+    subtitle="Staff records — tap a row to open the employee profile"
+    searchPlaceholder="Search name, Emp ID or mobile"
+    addLabel="Add Employee"
+    (search)="onSearch($event)"
+    (add)="openForm()"
+  >
+    <div class="filter-bar">
+      <div class="filter">
+        <label for="emp-filter-type">Type</label>
+        <p-select
+          inputId="emp-filter-type"
+          [options]="types()"
+          optionLabel="name"
+          optionValue="id"
+          [ngModel]="typeFilter()"
+          (ngModelChange)="setTypeFilter($event)"
+          [showClear]="true"
+          placeholder="All types"
+          appendTo="body"
+        />
+      </div>
+      <div class="filter">
+        <label for="emp-filter-status">Status</label>
+        <p-select
+          inputId="emp-filter-status"
+          [options]="statusOptions"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="statusFilter()"
+          (ngModelChange)="setStatusFilter($event)"
+          [showClear]="true"
+          placeholder="All statuses"
+          appendTo="body"
+        />
+      </div>
+    </div>
+  </app-page-header>
+
+  <div class="card p-0">
+    <p-table
+      [value]="loading() ? [] : rows()"
+      [lazy]="true"
+      (onLazyLoad)="onLazyLoad($event)"
+      [paginator]="true"
+      [rows]="pageSize()"
+      [first]="first()"
+      [totalRecords]="total()"
+      [rowsPerPageOptions]="pageSizeOptions"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="{first}–{last} of {totalRecords}"
+      [loading]="loading()"
+      [showLoader]="false"
+      sortField="createdAt"
+      [sortOrder]="-1"
+      dataKey="id"
+      [scrollable]="true"
+      [rowHover]="true"
+      [tableStyle]="{ 'min-width': '60rem' }"
+    >
+      <ng-template #header>
+        <tr>
+          <th pSortableColumn="empCode" style="width: 7rem">Emp ID <p-sortIcon field="empCode" /></th>
+          <th style="width: 4.5rem">Photo</th>
+          <th pSortableColumn="fullName">Name <p-sortIcon field="fullName" /></th>
+          <th pSortableColumn="employeeTypeName">Type <p-sortIcon field="employeeTypeName" /></th>
+          <th pSortableColumn="mobile">Mobile <p-sortIcon field="mobile" /></th>
+          <th pSortableColumn="joiningDate">Joining Date <p-sortIcon field="joiningDate" /></th>
+          <th pSortableColumn="status">Status <p-sortIcon field="status" /></th>
+          <th class="text-right" style="width: 7rem">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-emp>
+        <tr
+          class="clickable-row"
+          tabindex="0"
+          [attr.aria-label]="'Open profile of ' + emp.fullName"
+          (click)="openProfile(emp)"
+          (keydown.enter)="openProfile(emp)"
+        >
+          <td><span class="code">{{ emp.empCode }}</span></td>
+          <td>
+            @if (emp.photo) {
+              <img class="thumb emp-thumb" [src]="emp.photo" [alt]="emp.fullName" />
+            } @else {
+              <span class="thumb emp-thumb" aria-hidden="true">{{ initials(emp.fullName) }}</span>
+            }
+          </td>
+          <td class="bold">{{ emp.fullName }}</td>
+          <td>{{ emp.employeeTypeName }}</td>
+          <td class="num">{{ emp.mobile }}</td>
+          <td class="nowrap">{{ emp.joiningDate | istDate }}</td>
+          <td><app-status-tag [status]="emp.status" /></td>
+          <td>
+            <!-- Stop clicks/keys here so the row doesn't navigate. -->
+            <div class="row-actions" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+              <p-button
+                icon="pi pi-pencil"
+                [text]="true"
+                [rounded]="true"
+                pTooltip="Edit"
+                tooltipPosition="top"
+                ariaLabel="Edit employee"
+                (onClick)="openForm(emp)"
+              />
+              <p-button
+                icon="pi pi-trash"
+                severity="danger"
+                [text]="true"
+                [rounded]="true"
+                pTooltip="Delete"
+                tooltipPosition="top"
+                ariaLabel="Delete employee"
+                (onClick)="remove(emp)"
+              />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template #loadingbody>
+        @for (r of skeletonRows; track r) {
+          <tr appSkeletonRow [cols]="8"></tr>
+        }
+      </ng-template>
+
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="8">
+            @if (error(); as e) {
+              <app-empty-state
+                icon="pi pi-exclamation-triangle"
+                title="Could not load employees"
+                [message]="e"
+                actionLabel="Retry"
+                (action)="load()"
+              />
+            } @else {
+              <app-empty-state
+                icon="pi pi-users"
+                title="No employees found"
+                message="Add your staff with their type, contact and joining details. Change the filters if you expected results."
+                actionLabel="Add Employee"
+                actionIcon="pi pi-plus"
+                (action)="openForm()"
+              />
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<app-employee-form [(visible)]="formVisible" [employee]="editing()" (saved)="load()" />
