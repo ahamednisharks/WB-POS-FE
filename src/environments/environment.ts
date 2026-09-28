@@ -1,5 +1,5 @@
 import { AppEnvironment } from './environment.model';
-
+// Local
 export const environment: AppEnvironment = {
   production: true,
   apiUrl: 'http://localhost:9000/api',
@@ -17,3 +17,4 @@ export const environment: AppEnvironment = {
     upiId: 'wbbakery@upi',
   },
 };
+

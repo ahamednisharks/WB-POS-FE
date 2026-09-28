@@ -25,7 +25,7 @@ npm install
 ## 2. Run
 
 ```bash
-npm start            # ng serve → http://localhost:4200
+npm start            # ng serve → http://localhost:4300
 ```
 
 ### Mock logins
