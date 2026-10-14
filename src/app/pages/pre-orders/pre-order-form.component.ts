@@ -19,8 +19,16 @@ import { SelectModule } from 'primeng/select';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TextareaModule } from 'primeng/textarea';
 import { TooltipModule } from 'primeng/tooltip';
-import { debounceTime, of, switchMap } from 'rxjs';
-import { CustomerLookup, DeliveryType, PaymentMode, PreOrder, PreOrderLine, PreOrderSave } from '../../core/models';
+import { debounceTime, of, Subscription, switchMap } from 'rxjs';
+import {
+  CustomerLookup,
+  DeliveryType,
+  PaymentMode,
+  PreOrder,
+  PreOrderLine,
+  PreOrderNextNo,
+  PreOrderSave,
+} from '../../core/models';
 import { ItemService } from '../../core/services/item.service';
 import { LayoutService } from '../../core/services/layout.service';
 import { NotifyService } from '../../core/services/notify.service';
@@ -111,6 +119,9 @@ export class PreOrderFormComponent {
   protected readonly items = signal<ItemOption[]>([]);
   protected readonly customer = signal<CustomerLookup | null>(null);
   protected readonly minDelivery = signal(new Date());
+  /** New booking: the number it should get (taken only on save) and today's date. */
+  protected readonly next = signal<PreOrderNextNo | null>(null);
+  private nextSub?: Subscription;
 
   /** Delivery time as booked — an overdue order can still be saved as long as it is not moved. */
   private bookedDeliveryAt: number | null = null;
@@ -222,6 +233,9 @@ export class PreOrderFormComponent {
     this.saving.set(false);
     this.customer.set(null);
     this.minDelivery.set(new Date());
+    this.nextSub?.unsubscribe();
+    this.next.set(null);
+    if (!order) this.nextSub = this.preOrders.nextNo().subscribe((n) => this.next.set(n));
     this.bookedDeliveryAt = strToDateTime(order?.deliveryAt)?.getTime() ?? null;
     this.bookedRates = new Map();
     for (const l of order?.lines ?? []) if (!this.bookedRates.has(l.itemId)) this.bookedRates.set(l.itemId, l.masterRate);

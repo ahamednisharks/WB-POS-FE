@@ -6,6 +6,7 @@ import {
   PagedResult,
   PreOrder,
   PreOrderCancel,
+  PreOrderNextNo,
   PreOrderPaymentInput,
   PreOrderSave,
   PreOrderSummary,
@@ -32,6 +33,13 @@ export class PreOrderService {
 
   get(id: string): Observable<PreOrder> {
     return this.api.get<PreOrder>(`${this.path}/${id}`);
+  }
+
+  /** Number and date for the New Pre-Order screen; null when it cannot be loaded (the form still saves). */
+  nextNo(): Observable<PreOrderNextNo | null> {
+    return this.api
+      .get<PreOrderNextNo>(`${this.path}/next-no`, undefined, { context: silentErrors() })
+      .pipe(catchError(() => of(null)));
   }
 
   create(body: PreOrderSave): Observable<PreOrder> {

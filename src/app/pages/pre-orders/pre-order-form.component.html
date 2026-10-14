@@ -13,6 +13,13 @@
         <div class="readonly-box" aria-labelledby="pre-no-label">
           @if (order(); as o) {
             <code class="code">{{ o.orderNo }}</code>
+          } @else if (next(); as n) {
+            <code
+              class="code"
+              pTooltip="Confirmed on save. If another counter books first, this order gets the next number."
+              tooltipPosition="top"
+              >{{ n.orderNo }}</code
+            >
           } @else {
             <span class="muted">Auto (generated on save)</span>
           }
@@ -24,6 +31,8 @@
         <div class="readonly-box" aria-labelledby="pre-date-label">
           @if (order(); as o) {
             {{ o.orderDate | istDateTime }}
+          } @else if (next(); as n) {
+            {{ n.orderDate | istDateTime }}
           } @else {
             <span class="muted">Now (time of booking)</span>
           }

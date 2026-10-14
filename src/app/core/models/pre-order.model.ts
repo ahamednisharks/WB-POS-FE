@@ -92,6 +92,12 @@ export interface PreOrder extends PreOrderSummary {
   payments: PreOrderPayment[];
 }
 
+/** Shown on the New Pre-Order screen; the number is only taken on save, so another counter booking first moves it on. */
+export interface PreOrderNextNo {
+  orderNo: string;
+  orderDate: string;
+}
+
 export interface PreOrderPaymentInput {
   mode: PaymentMode;
   amount: number;
