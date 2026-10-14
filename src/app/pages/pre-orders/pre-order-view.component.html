@@ -1,0 +1,224 @@
+<app-form-dialog
+  [(visible)]="visible"
+  [header]="'Pre-Order ' + (order()?.orderNo ?? '')"
+  width="1000px"
+  [maximizable]="true"
+>
+  @if (order(); as o) {
+    @if (o.status === 'CANCELLED') {
+      <div class="view-alert">
+        <p-message severity="error" icon="pi pi-ban">
+          Cancelled — {{ o.cancelReason || 'no reason recorded' }}.
+          Refunded {{ (o.refundAmount ?? 0) | inr }}{{ o.refundMode ? ' (' + modeLabel[o.refundMode] + ')' : '' }},
+          shop kept {{ kept() | inr }}.
+        </p-message>
+      </div>
+    } @else if (o.status === 'DELIVERED') {
+      <div class="view-alert">
+        <p-message severity="success" icon="pi pi-check-circle">
+          Delivered {{ o.deliveredAt | istDateTime }} — bill
+          <a class="link-btn" [routerLink]="['/orders', o.billId]" (click)="visible.set(false)">{{ o.billNo }}</a>
+        </p-message>
+      </div>
+    } @else if (overdue()) {
+      <div class="view-alert">
+        <p-message severity="warn" icon="pi pi-clock">Delivery time has passed and the order is not delivered yet.</p-message>
+      </div>
+    }
+
+    <div class="detail-grid">
+      <div class="dl">
+        <span>Order No</span>
+        <span><code class="code">{{ o.orderNo }}</code></span>
+      </div>
+      <div class="dl">
+        <span>Order Date</span>
+        <span>{{ o.orderDate | istDateTime }}</span>
+      </div>
+      <div class="dl">
+        <span>Delivery</span>
+        <span>{{ o.deliveryAt | istDateTime }}</span>
+      </div>
+      <div class="dl">
+        <span>Status</span>
+        <span><app-status-tag [status]="o.status" /></span>
+      </div>
+      <div class="dl">
+        <span>Customer</span>
+        <span>{{ o.customerName }}</span>
+      </div>
+      <div class="dl">
+        <span>Customer Number</span>
+        <span>{{ o.customerMobile }}</span>
+      </div>
+      <div class="dl">
+        <span>Additional Phone</span>
+        <span>{{ o.altMobile || '—' }}</span>
+      </div>
+      <div class="dl">
+        <span>Booked By</span>
+        <span>{{ o.bookedByName }}</span>
+      </div>
+      <div class="dl">
+        <span>Delivery Location</span>
+        <span>{{ typeLabel[o.deliveryType] }}</span>
+      </div>
+      @if (o.deliveryType === 'HOME') {
+        <div class="dl" style="grid-column: span 2">
+          <span>Address</span>
+          <span class="note-text">{{ o.deliveryAddress }}</span>
+        </div>
+      }
+    </div>
+
+    <div class="view-table-wrap">
+      <table class="view-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Item</th>
+            <th>Category</th>
+            <th class="text-right">Qty</th>
+            <th class="text-right">Actual Price</th>
+            <th class="text-right">Item Price</th>
+            <th class="text-right">Amount</th>
+            <th>Notes</th>
+            <th>Design</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (line of o.lines; track $index; let i = $index) {
+            <tr>
+              <td class="muted">{{ i + 1 }}</td>
+              <td class="bold">{{ line.itemName }}</td>
+              <td>{{ line.categoryName }}</td>
+              <td class="text-right num">{{ line.qty | qty }} {{ line.unitCode }}</td>
+              <td class="text-right num muted">{{ line.masterRate | inr }}</td>
+              <td class="text-right num">
+                {{ line.rate | inr }}
+                @if (line.rateDiff !== 0) {
+                  <div class="rate-diff" [class.up]="line.rateDiff > 0" [class.down]="line.rateDiff < 0">
+                    {{ line.rateDiff > 0 ? '+' : '−' }}{{ (line.rateDiff < 0 ? -line.rateDiff : line.rateDiff) | inr }}
+                  </div>
+                }
+              </td>
+              <td class="text-right num bold">{{ line.amount | inr }}</td>
+              <td class="notes-cell">{{ line.notes || '—' }}</td>
+              <td>
+                @if (line.designUrl) {
+                  <a [href]="line.designUrl" target="_blank" rel="noopener" [attr.aria-label]="'Open design photo for ' + line.itemName">
+                    <img class="design-thumb" [src]="line.designUrl" [alt]="'Design for ' + line.itemName" />
+                  </a>
+                } @else {
+                  <span class="muted">—</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="view-bottom">
+      <div>
+        <div class="form-section-title view-section-title">Payments</div>
+        @if (o.payments.length) {
+          <div class="view-table-wrap">
+            <table class="view-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Mode</th>
+                  <th class="text-right">Amount</th>
+                  <th>Reference</th>
+                  <th>Received By</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (p of o.payments; track p.id) {
+                  <tr>
+                    <td>
+                      {{ p.paidAt | istDateTime }}
+                      @if (p.atDelivery) {
+                        <p-tag value="At delivery" severity="success" [rounded]="true" />
+                      }
+                    </td>
+                    <td>{{ modeLabel[p.mode] }}</td>
+                    <td class="text-right num bold">{{ p.amount | inr }}</td>
+                    <td>{{ p.reference || '—' }}</td>
+                    <td>{{ p.receivedByName }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <p class="muted small">No payment received yet.</p>
+        }
+      </div>
+
+      <div class="totals">
+        <div class="kv">
+          <span>Items Total</span>
+          <span class="num">{{ o.subTotal | inr }}</span>
+        </div>
+        @if (o.discountAmount > 0) {
+          <div class="kv">
+            <span>Discount</span>
+            <span class="num">−{{ o.discountAmount | inr }}</span>
+          </div>
+        }
+        <div class="kv">
+          <span>GST</span>
+          <span class="num">{{ o.totalGst | inr }}</span>
+        </div>
+        @if (o.deliveryCharge > 0) {
+          <div class="kv">
+            <span>Delivery Charge</span>
+            <span class="num">{{ o.deliveryCharge | inr }}</span>
+          </div>
+        }
+        @if (o.roundOff !== 0) {
+          <div class="kv">
+            <span>Round Off</span>
+            <span class="num">{{ o.roundOff | inr }}</span>
+          </div>
+        }
+        <div class="kv grand">
+          <span>Total Amount</span>
+          <span class="num">{{ o.grandTotal | inr }}</span>
+        </div>
+        <div class="kv">
+          <span>Paid</span>
+          <span class="num">{{ o.paidAmount | inr }}</span>
+        </div>
+        @if (o.status !== 'CANCELLED') {
+          <div class="kv balance">
+            <span>Balance Due</span>
+            <span class="num">{{ o.balance | inr }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <div dialogFooter class="dialog-footer">
+    @if (open()) {
+      <div class="view-footer-left">
+        @if (auth.isAdmin()) {
+          <p-button label="Cancel Order" icon="pi pi-ban" severity="danger" [text]="true" (onClick)="emit('cancel')" />
+        }
+        <p-button label="Edit" icon="pi pi-pencil" severity="secondary" [outlined]="true" (onClick)="emit('edit')" />
+      </div>
+      @if ((order()?.balance ?? 0) > 0) {
+        <p-button label="Add Payment" icon="pi pi-wallet" severity="secondary" [outlined]="true" (onClick)="emit('pay')" />
+      }
+      @if (order()?.status === 'BOOKED') {
+        <p-button label="Mark Ready" icon="pi pi-check-circle" severity="secondary" [outlined]="true" (onClick)="emit('ready')" />
+      }
+      <p-button label="Deliver" icon="pi pi-check-square" (onClick)="emit('deliver')" />
+    } @else {
+      <p-button label="Close" severity="secondary" [outlined]="true" (onClick)="visible.set(false)" />
+    }
+  </div>
+</app-form-dialog>

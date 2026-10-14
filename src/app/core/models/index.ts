@@ -11,6 +11,7 @@ export * from './salary-setup.model';
 export * from './salary-payment.model';
 export * from './login-account.model';
 export * from './bill.model';
+export * from './pre-order.model';
 export * from './transaction.model';
 export * from './day-close.model';
 export * from './purchase-order.model';

@@ -57,17 +57,23 @@
   <div class="kv"><span>Taxable Value</span><span>{{ b.taxableAmount | inr }}</span></div>
   <div class="kv"><span>CGST</span><span>{{ b.cgst | inr }}</span></div>
   <div class="kv"><span>SGST</span><span>{{ b.sgst | inr }}</span></div>
+  @if (b.deliveryCharge) {
+    <div class="kv"><span>Delivery Charge</span><span>{{ b.deliveryCharge | inr }}</span></div>
+  }
   @if (b.roundOff !== 0) {
     <div class="kv"><span>Round Off</span><span>{{ b.roundOff | inr }}</span></div>
   }
   <div class="rule"></div>
   <div class="kv total"><span>TOTAL</span><span>{{ b.grandTotal | inr }}</span></div>
   <div class="rule"></div>
+  @if (b.preOrderNo) {
+    <div class="center small">Pre-order {{ b.preOrderNo }}</div>
+  }
 
   @if (b.payments.length) {
     @for (p of b.payments; track $index) {
       <div class="kv">
-        <span>Paid by {{ modeLabel[p.mode] }}@if (p.reference) { (xx{{ p.reference }})}</span>
+        <span>{{ p.isAdvance ? 'Advance' : 'Paid' }} by {{ modeLabel[p.mode] }}@if (p.reference) { (xx{{ p.reference }})}</span>
         <span>{{ p.amount | inr }}</span>
       </div>
     }

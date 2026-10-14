@@ -1,0 +1,426 @@
+<app-form-dialog
+  [(visible)]="visible"
+  [header]="order() ? 'Edit Pre-Order ' + (order()?.orderNo ?? '') : 'New Pre-Order'"
+  width="1240px"
+  [maximizable]="true"
+>
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+    <div class="form-grid cols-3">
+      <div class="form-section-title">Order</div>
+
+      <div class="field">
+        <label id="pre-no-label">Order No</label>
+        <div class="readonly-box" aria-labelledby="pre-no-label">
+          @if (order(); as o) {
+            <code class="code">{{ o.orderNo }}</code>
+          } @else {
+            <span class="muted">Auto (generated on save)</span>
+          }
+        </div>
+      </div>
+
+      <div class="field">
+        <label id="pre-date-label">Order Date</label>
+        <div class="readonly-box" aria-labelledby="pre-date-label">
+          @if (order(); as o) {
+            {{ o.orderDate | istDateTime }}
+          } @else {
+            <span class="muted">Now (time of booking)</span>
+          }
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="pre-delivery-at">Delivery Date &amp; Time <span class="req">*</span></label>
+        <p-datepicker
+          inputId="pre-delivery-at"
+          formControlName="deliveryAt"
+          [showTime]="true"
+          hourFormat="12"
+          [stepMinute]="15"
+          [showIcon]="true"
+          [readonlyInput]="true"
+          [minDate]="minDelivery()"
+          dateFormat="dd-mm-yy"
+          placeholder="dd-mm-yyyy hh:mm"
+          appendTo="body"
+        />
+        <app-field-error
+          [control]="form.controls.deliveryAt"
+          label="Delivery date & time"
+          [messages]="{ past: 'Delivery must be later than now' }"
+        />
+      </div>
+
+      <div class="form-section-title">Customer</div>
+
+      <div class="field">
+        <label for="pre-mobile">Customer Number <span class="req">*</span></label>
+        <input
+          pInputText
+          id="pre-mobile"
+          formControlName="customerMobile"
+          inputmode="numeric"
+          maxlength="10"
+          autocomplete="off"
+          placeholder="10-digit mobile"
+        />
+        <app-field-error
+          [control]="form.controls.customerMobile"
+          label="Customer number"
+          [messages]="{ pattern: 'Enter a valid 10-digit mobile number' }"
+        />
+        @if (customer(); as c) {
+          <small class="returning">
+            <i class="pi pi-user" aria-hidden="true"></i>
+            Returning customer · {{ c.visitCount }} {{ c.visitCount === 1 ? 'visit' : 'visits' }}
+          </small>
+        }
+      </div>
+
+      <div class="field">
+        <label for="pre-name">Customer Name <span class="req">*</span></label>
+        <input pInputText id="pre-name" formControlName="customerName" maxlength="80" autocomplete="off" />
+        <app-field-error [control]="form.controls.customerName" label="Customer name" />
+      </div>
+
+      <div class="field">
+        <label for="pre-alt">Additional Phone</label>
+        <input
+          pInputText
+          id="pre-alt"
+          formControlName="altMobile"
+          inputmode="numeric"
+          maxlength="10"
+          autocomplete="off"
+          placeholder="Optional"
+        />
+        <app-field-error
+          [control]="form.controls.altMobile"
+          label="Additional phone"
+          [messages]="{ pattern: 'Enter a valid 10-digit mobile number' }"
+        />
+        @if (form.hasError('altSameAsMobile') && form.controls.altMobile.touched) {
+          <small class="error-text" role="alert">Must be different from the customer number</small>
+        }
+      </div>
+
+      <div class="form-section-title">Delivery</div>
+
+      <div class="field">
+        <label id="pre-type-label">Delivery Location</label>
+        <p-selectbutton
+          [options]="deliveryTypes"
+          optionLabel="label"
+          optionValue="value"
+          formControlName="deliveryType"
+          [allowEmpty]="false"
+          ariaLabelledBy="pre-type-label"
+        />
+      </div>
+
+      <div class="field">
+        <label for="pre-charge">Delivery Charge</label>
+        <p-inputnumber
+          inputId="pre-charge"
+          formControlName="deliveryCharge"
+          mode="currency"
+          currency="INR"
+          locale="en-IN"
+          [min]="0"
+          inputStyleClass="w-full"
+        />
+        <small class="hint">{{ isHome() ? 'Added to the bill, no GST' : 'Only for home delivery' }}</small>
+        <app-field-error [control]="form.controls.deliveryCharge" label="Delivery charge" />
+      </div>
+
+      @if (isHome()) {
+        <div class="field span-all">
+          <label for="pre-address">Delivery Address <span class="req">*</span></label>
+          <textarea
+            pTextarea
+            id="pre-address"
+            formControlName="deliveryAddress"
+            rows="2"
+            maxlength="255"
+            placeholder="Door no, street, area, landmark"
+          ></textarea>
+          <app-field-error [control]="form.controls.deliveryAddress" label="Delivery address" />
+        </div>
+      }
+    </div>
+
+    <div class="section-head">
+      <div class="form-section-title">Items</div>
+      <p-button label="Add Item" icon="pi pi-plus" size="small" [outlined]="true" (onClick)="addLine()" />
+    </div>
+    @if (lines.errors?.['server']; as serverError) {
+      <small class="error-text" role="alert">{{ serverError }}</small>
+    }
+
+    <div class="lines-scroll" [class.as-cards]="layout.isMobile()">
+      <div class="lines pre-lines" formArrayName="items">
+        <div class="line-head" aria-hidden="true">
+          <span>#</span>
+          <span>Item <span class="req">*</span></span>
+          <span>Category</span>
+          <span>Unit</span>
+          <span>Qty <span class="req">*</span></span>
+          <span class="text-right">Actual Price</span>
+          <span>Item Price <span class="req">*</span></span>
+          <span>Notes</span>
+          <span>Design</span>
+          <span class="text-right">Amount</span>
+          <span></span>
+        </div>
+
+        @for (line of lines.controls; track line; let i = $index) {
+          @let item = itemMap().get(line.controls.itemId.value);
+          @let diff = rateDiffs()[i];
+          <div class="line" [formGroupName]="i">
+            <div class="c-no cell-text"><span class="card-only">Item&nbsp;</span>{{ i + 1 }}</div>
+
+            <div class="c-item field">
+              <label class="cell-label" [for]="'pre-item-' + i">Item</label>
+              <p-select
+                [inputId]="'pre-item-' + i"
+                formControlName="itemId"
+                [options]="items()"
+                optionLabel="name"
+                optionValue="id"
+                [filter]="true"
+                filterBy="name,code,categoryName"
+                [loading]="itemsLoading()"
+                placeholder="Select item"
+                emptyMessage="No sale items — add them in Item Master"
+                appendTo="body"
+                (onChange)="onItemPicked(i, $event.value)"
+              />
+              <app-field-error [control]="line.controls.itemId" label="Item" />
+            </div>
+
+            <div class="c-meta cell-text">
+              <span class="cell-label">Category</span>
+              <span>{{ item?.categoryName || '—' }}</span>
+            </div>
+
+            <div class="c-meta cell-text">
+              <span class="cell-label">Unit</span>
+              <span>{{ item?.unitCode || '—' }}</span>
+            </div>
+
+            <div class="field">
+              <label class="cell-label" [for]="'pre-qty-' + i">Qty</label>
+              <p-inputnumber
+                [inputId]="'pre-qty-' + i"
+                formControlName="qty"
+                [min]="0"
+                [maxFractionDigits]="item?.allowDecimal ? 3 : 0"
+                placeholder="0"
+                inputStyleClass="w-full"
+              />
+              <app-field-error [control]="line.controls.qty" label="Qty" [messages]="{ min: 'Enter qty > 0' }" />
+            </div>
+
+            <div class="c-actual cell-text">
+              <span class="cell-label">Actual Price</span>
+              <span class="num">
+                @if (line.controls.masterRate.value !== null) {
+                  {{ line.controls.masterRate.value | inr }}
+                } @else {
+                  —
+                }
+              </span>
+            </div>
+
+            <div class="field">
+              <label class="cell-label" [for]="'pre-rate-' + i">Item Price</label>
+              <p-inputnumber
+                [inputId]="'pre-rate-' + i"
+                formControlName="rate"
+                mode="currency"
+                currency="INR"
+                locale="en-IN"
+                [min]="0"
+                placeholder="₹0.00"
+                inputStyleClass="w-full"
+              />
+              @if (diff !== 0) {
+                <button
+                  type="button"
+                  class="price-diff"
+                  [class.up]="diff > 0"
+                  [class.down]="diff < 0"
+                  pTooltip="Back to the Actual Price"
+                  tooltipPosition="bottom"
+                  (click)="resetRate(i)"
+                >
+                  {{ diff > 0 ? '+' : '−' }}{{ (diff < 0 ? -diff : diff) | inr }} vs actual
+                </button>
+              }
+              <app-field-error [control]="line.controls.rate" label="Item price" [messages]="{ min: 'Enter price > 0' }" />
+            </div>
+
+            <div class="c-notes field">
+              <label class="cell-label" [for]="'pre-notes-' + i">Notes</label>
+              <input
+                pInputText
+                [id]="'pre-notes-' + i"
+                formControlName="notes"
+                maxlength="255"
+                placeholder="Message, flavour, eggless…"
+              />
+            </div>
+
+            <div class="c-design field">
+              <span class="cell-label">Design</span>
+              <app-design-picker formControlName="design" [label]="'design photo for item ' + (i + 1)" />
+            </div>
+
+            <div class="c-amount cell-text">
+              <span class="cell-label">Amount</span>
+              <span class="bold">{{ (totals().lines[i]?.amount ?? 0) | inr }}</span>
+            </div>
+
+            <div class="c-remove">
+              <p-button
+                icon="pi pi-trash"
+                severity="danger"
+                [text]="true"
+                [rounded]="true"
+                [disabled]="lines.length === 1"
+                pTooltip="Remove row"
+                tooltipPosition="left"
+                [ariaLabel]="'Remove item row ' + (i + 1)"
+                (onClick)="removeLine(i)"
+              />
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="bottom-grid">
+      <div class="pay-box">
+        <div class="form-section-title">{{ order() ? 'Take another payment' : 'Advance payment' }}</div>
+        @if (order(); as o) {
+          <p class="muted small">
+            {{ o.paidAmount | inr }} already paid in {{ o.payments.length }}
+            {{ o.payments.length === 1 ? 'payment' : 'payments' }}. Leave 0 to only save the changes.
+          </p>
+        } @else {
+          <p class="muted small">
+            Leave 0 if the customer pays later — payments can be added any number of times until delivery.
+          </p>
+        }
+        <div class="form-grid">
+          <div class="field">
+            <label for="pre-pay-amount">Amount</label>
+            <p-inputnumber
+              inputId="pre-pay-amount"
+              formControlName="payAmount"
+              mode="currency"
+              currency="INR"
+              locale="en-IN"
+              [min]="0"
+              inputStyleClass="w-full"
+            />
+            <app-field-error [control]="form.controls.payAmount" label="Amount" />
+            @if (totals().payNow > 0 && totals().balance < 0) {
+              <small class="error-text" role="alert">More than the balance due</small>
+            }
+          </div>
+          <div class="field">
+            <label id="pre-pay-mode-label">Mode</label>
+            <p-selectbutton
+              [options]="paymentModes"
+              optionLabel="label"
+              optionValue="value"
+              formControlName="payMode"
+              [allowEmpty]="false"
+              ariaLabelledBy="pre-pay-mode-label"
+            />
+          </div>
+          @if (value().payMode !== 'CASH' && totals().payNow > 0) {
+            <div class="field span-all">
+              <label for="pre-pay-ref">Reference / UTR</label>
+              <input pInputText id="pre-pay-ref" formControlName="payReference" maxlength="50" placeholder="Optional" />
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="totals" aria-live="polite">
+        <div class="kv">
+          <span>Items Total</span>
+          <span class="num">{{ totals().subTotal | inr }}</span>
+        </div>
+        <div class="kv">
+          <label for="pre-discount">Discount</label>
+          <p-inputnumber
+            inputId="pre-discount"
+            formControlName="discountAmount"
+            mode="currency"
+            currency="INR"
+            locale="en-IN"
+            [min]="0"
+            inputStyleClass="w-full text-right"
+          />
+        </div>
+        @if (discountTooHigh()) {
+          <small class="error-text kv-error" role="alert">Discount cannot be more than the items total</small>
+        }
+        <app-field-error class="kv-error" [control]="form.controls.discountAmount" label="Discount" />
+        <div class="kv">
+          <span>GST</span>
+          <span class="num">{{ totals().totalGst | inr }}</span>
+        </div>
+        @if (isHome()) {
+          <div class="kv">
+            <span>Delivery Charge</span>
+            <span class="num">{{ totals().deliveryCharge | inr }}</span>
+          </div>
+        }
+        <div class="kv">
+          <span>Round Off</span>
+          <span class="num">{{ totals().roundOff | inr }}</span>
+        </div>
+        <div class="kv grand">
+          <span>Total Amount</span>
+          <span class="num">{{ totals().grandTotal | inr }}</span>
+        </div>
+        @if (totals().paid > 0) {
+          <div class="kv">
+            <span>Already Paid</span>
+            <span class="num">−{{ totals().paid | inr }}</span>
+          </div>
+        }
+        @if (totals().payNow > 0) {
+          <div class="kv">
+            <span>Paying Now</span>
+            <span class="num">−{{ totals().payNow | inr }}</span>
+          </div>
+        }
+        <div class="kv balance">
+          <span>Balance Due</span>
+          <span class="num">{{ totals().balance | inr }}</span>
+        </div>
+        @if (totals().payNow === 0 && totals().balance < 0) {
+          <small class="error-text kv-error" role="alert">Total cannot be less than the amount already paid</small>
+        }
+      </div>
+    </div>
+    <button type="submit" hidden aria-hidden="true"></button>
+  </form>
+
+  <div dialogFooter class="dialog-footer">
+    <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="visible.set(false)" />
+    <p-button
+      [label]="order() ? 'Save Changes' : 'Save Order'"
+      icon="pi pi-save"
+      [loading]="saving()"
+      [disabled]="form.invalid || saving() || discountTooHigh() || totals().balance < 0"
+      (onClick)="save()"
+    />
+  </div>
+</app-form-dialog>

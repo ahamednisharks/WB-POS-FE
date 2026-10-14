@@ -101,6 +101,20 @@ export function strToDate(value: string | null | undefined): Date | null {
   return new Date(y, m - 1, d);
 }
 
+/** Date + time picked in a PrimeNG DatePicker (local = IST wall clock) → yyyy-MM-ddTHH:mm:00 (the API reads it as IST). */
+export function dateTimeToStr(date: Date | null | undefined): string | null {
+  const day = dateToStr(date);
+  if (!day || !date) return null;
+  return `${day}T${pad(date.getHours())}:${pad(date.getMinutes())}:00`;
+}
+
+/** API date-time (yyyy-MM-ddTHH:mm:ss+05:30) → local Date with the same IST wall-clock time, for a DatePicker. */
+export function strToDateTime(value: string | null | undefined): Date | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/.exec(value ?? '');
+  if (!m) return null;
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(m[4]), Number(m[5]));
+}
+
 /** Date → yyyy-MM */
 export function monthToStr(date: Date | null | undefined): string | null {
   if (!date) return null;

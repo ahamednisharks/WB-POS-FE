@@ -1,6 +1,7 @@
 import { Component, forwardRef, input, signal } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
+import { readAsDataUrl, resizeImage } from '../../../core/utils/image.util';
 
 /**
  * Image upload field (value = data URL or null). Validates type/size and
@@ -63,19 +64,17 @@ export class ImagePickerComponent implements ControlValueAccessor {
     }
     this.error.set(null);
     this.busy.set(true);
-    const reader = new FileReader();
-    reader.onload = () => {
-      void this.resize(String(reader.result), file.type).then((url) => {
+    readAsDataUrl(file)
+      .then((dataUrl) => resizeImage(dataUrl, file.type, this.maxDimension()))
+      .then((url) => {
         this.busy.set(false);
         this.value.set(url);
         this.onChange(url);
+      })
+      .catch(() => {
+        this.busy.set(false);
+        this.error.set('Could not read the file');
       });
-    };
-    reader.onerror = () => {
-      this.busy.set(false);
-      this.error.set('Could not read the file');
-    };
-    reader.readAsDataURL(file);
   }
 
   protected clear(): void {
@@ -83,31 +82,5 @@ export class ImagePickerComponent implements ControlValueAccessor {
     this.error.set(null);
     this.onChange(null);
     this.onTouched();
-  }
-
-  private resize(dataUrl: string, type: string): Promise<string> {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        const max = this.maxDimension();
-        const scale = Math.min(1, max / Math.max(img.width, img.height));
-        if (scale === 1) {
-          resolve(dataUrl);
-          return;
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.round(img.width * scale);
-        canvas.height = Math.round(img.height * scale);
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          resolve(dataUrl);
-          return;
-        }
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL(type === 'image/png' ? 'image/png' : 'image/jpeg', 0.85));
-      };
-      img.onerror = () => resolve(dataUrl);
-      img.src = dataUrl;
-    });
   }
 }

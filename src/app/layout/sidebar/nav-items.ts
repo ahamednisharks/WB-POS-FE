@@ -39,6 +39,7 @@ export const NAV_ITEMS: NavItem[] = [
     ],
   },
   { label: 'Billing', icon: 'pi pi-calculator', route: '/billing', roles: ALL },
+  { label: 'Pre-Orders', icon: 'pi pi-calendar-clock', route: '/pre-orders', roles: ALL },
   { label: 'Orders', icon: 'pi pi-receipt', route: '/orders', roles: ALL },
   {
     label: 'Transactions',

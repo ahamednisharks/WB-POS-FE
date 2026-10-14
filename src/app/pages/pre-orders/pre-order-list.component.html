@@ -1,0 +1,250 @@
+<div class="page">
+  <app-page-header
+    title="Pre-Orders"
+    subtitle="Custom orders booked in advance — take payments any time, the bill is generated on delivery"
+    searchPlaceholder="Search order no, customer name or number"
+    addLabel="New Pre-Order"
+    (search)="onSearch($event)"
+    (add)="openNew()"
+  >
+    <div class="filter-bar">
+      <div class="filter">
+        <label for="pre-f-preset">Delivery</label>
+        <p-select
+          inputId="pre-f-preset"
+          [options]="presetOptions"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="preset()"
+          (ngModelChange)="onPreset($event)"
+        />
+      </div>
+      @if (preset() === 'CUSTOM') {
+        <div class="filter">
+          <label for="pre-f-range">From – To</label>
+          <p-datepicker
+            inputId="pre-f-range"
+            selectionMode="range"
+            [readonlyInput]="true"
+            [showIcon]="true"
+            dateFormat="dd-mm-yy"
+            placeholder="Select dates"
+            [ngModel]="customRange()"
+            (ngModelChange)="onCustomRange($event)"
+          />
+        </div>
+      }
+      <div class="filter">
+        <label for="pre-f-status">Status</label>
+        <p-select
+          inputId="pre-f-status"
+          [options]="statusOptions"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="status()"
+          (ngModelChange)="onStatus($event)"
+        />
+      </div>
+    </div>
+  </app-page-header>
+
+  <div class="card p-0">
+    <p-table
+      [value]="loading() ? [] : rows()"
+      [lazy]="true"
+      (onLazyLoad)="onLazyLoad($event)"
+      [paginator]="true"
+      [rows]="pageSize()"
+      [first]="first()"
+      [totalRecords]="total()"
+      [rowsPerPageOptions]="pageSizeOptions"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="{first}–{last} of {totalRecords}"
+      [loading]="loading()"
+      [showLoader]="false"
+      sortField="deliveryAt"
+      [sortOrder]="1"
+      dataKey="id"
+      [scrollable]="true"
+      [rowHover]="true"
+      [tableStyle]="{ 'min-width': '76rem' }"
+    >
+      <ng-template #header>
+        <tr>
+          <th pSortableColumn="orderNo">Order No <p-sortIcon field="orderNo" /></th>
+          <th pSortableColumn="deliveryAt">Delivery <p-sortIcon field="deliveryAt" /></th>
+          <th pSortableColumn="customerName">Customer <p-sortIcon field="customerName" /></th>
+          <th>Items</th>
+          <th pSortableColumn="grandTotal" class="text-right">Total <p-sortIcon field="grandTotal" /></th>
+          <th class="text-right">Paid</th>
+          <th pSortableColumn="balance" class="text-right">Balance <p-sortIcon field="balance" /></th>
+          <th pSortableColumn="status">Status <p-sortIcon field="status" /></th>
+          <th class="text-right" style="width: 15rem">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-o>
+        <tr>
+          <td>
+            <button type="button" class="link-btn nowrap" (click)="view(o)">{{ o.orderNo }}</button>
+            <div class="muted small nowrap">Booked {{ o.orderDate | istDateTime }}</div>
+          </td>
+          <td>
+            <div class="bold nowrap">{{ o.deliveryAt | istDateTime }}</div>
+            <div class="muted small nowrap flex items-center gap-1">
+              <i [class]="o.deliveryType === 'HOME' ? 'pi pi-truck' : 'pi pi-shop'" aria-hidden="true"></i>
+              {{ typeLabel[o.deliveryType] }}
+              @if (overdue(o)) {
+                <p-tag value="Overdue" severity="danger" [rounded]="true" />
+              } @else if (dueToday(o)) {
+                <p-tag value="Today" severity="warn" [rounded]="true" />
+              }
+            </div>
+          </td>
+          <td>
+            <div class="bold">{{ o.customerName }}</div>
+            <div class="muted small">{{ o.customerMobile }}</div>
+          </td>
+          <td>
+            <span class="items-summary" [pTooltip]="o.itemsSummary ?? ''" tooltipPosition="top">
+              {{ o.itemsSummary || o.itemCount + ' items' }}
+            </span>
+          </td>
+          <td class="text-right num bold">{{ o.grandTotal | inr }}</td>
+          <td class="text-right num">{{ o.paidAmount | inr }}</td>
+          <td class="text-right num" [class.bold]="o.balance > 0 && isOpen(o)">
+            {{ o.status === 'CANCELLED' ? '—' : (o.balance | inr) }}
+          </td>
+          <td><app-status-tag [status]="o.status" /></td>
+          <td>
+            <div class="row-actions">
+              <p-button
+                icon="pi pi-eye"
+                [text]="true"
+                [rounded]="true"
+                [loading]="opening() === o.id"
+                pTooltip="View"
+                tooltipPosition="top"
+                ariaLabel="View pre-order"
+                (onClick)="view(o)"
+              />
+              @if (isOpen(o)) {
+                <p-button
+                  icon="pi pi-pencil"
+                  [text]="true"
+                  [rounded]="true"
+                  pTooltip="Edit"
+                  tooltipPosition="top"
+                  ariaLabel="Edit pre-order"
+                  (onClick)="openEdit(o)"
+                />
+                @if (o.balance > 0) {
+                  <p-button
+                    icon="pi pi-wallet"
+                    severity="secondary"
+                    [text]="true"
+                    [rounded]="true"
+                    pTooltip="Add payment"
+                    tooltipPosition="top"
+                    ariaLabel="Add payment"
+                    (onClick)="openPay(o, 'PAY')"
+                  />
+                }
+                @if (o.status === 'BOOKED') {
+                  <p-button
+                    icon="pi pi-check-circle"
+                    severity="info"
+                    [text]="true"
+                    [rounded]="true"
+                    pTooltip="Mark ready"
+                    tooltipPosition="top"
+                    ariaLabel="Mark ready"
+                    (onClick)="markReady(o)"
+                  />
+                }
+                <p-button
+                  icon="pi pi-check-square"
+                  severity="success"
+                  [text]="true"
+                  [rounded]="true"
+                  pTooltip="Deliver & generate bill"
+                  tooltipPosition="top"
+                  ariaLabel="Deliver and generate bill"
+                  (onClick)="openPay(o, 'DELIVER')"
+                />
+                @if (auth.isAdmin()) {
+                  <p-button
+                    icon="pi pi-ban"
+                    severity="warn"
+                    [text]="true"
+                    [rounded]="true"
+                    pTooltip="Cancel order"
+                    tooltipPosition="top"
+                    ariaLabel="Cancel pre-order"
+                    (onClick)="openCancel(o)"
+                  />
+                }
+              }
+              @if (o.billId) {
+                <p-button
+                  icon="pi pi-receipt"
+                  severity="secondary"
+                  [text]="true"
+                  [rounded]="true"
+                  [pTooltip]="'Open bill ' + o.billNo"
+                  tooltipPosition="top"
+                  ariaLabel="Open bill"
+                  (onClick)="openBill(o)"
+                />
+              }
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template #loadingbody>
+        @for (r of skeletonRows; track r) {
+          <tr appSkeletonRow [cols]="9"></tr>
+        }
+      </ng-template>
+
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="9">
+            @if (error(); as e) {
+              <app-empty-state
+                icon="pi pi-exclamation-triangle"
+                title="Could not load pre-orders"
+                [message]="e"
+                actionLabel="Retry"
+                (action)="load()"
+              />
+            } @else {
+              <app-empty-state
+                icon="pi pi-calendar-clock"
+                title="No pre-orders found"
+                message="No pre-orders match these filters. Book a custom order with an advance payment."
+                actionLabel="New Pre-Order"
+                actionIcon="pi pi-plus"
+                (action)="openNew()"
+              />
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<app-pre-order-form [(visible)]="formVisible" [order]="editing()" (saved)="onChanged($event)" />
+<app-pre-order-view
+  [(visible)]="viewVisible"
+  [order]="viewing()"
+  (edit)="openEdit($event)"
+  (pay)="openPay($event, 'PAY')"
+  (ready)="markReady($event)"
+  (deliver)="openPay($event, 'DELIVER')"
+  (cancel)="openCancel($event)"
+/>
+<app-pre-order-pay-dialog [(visible)]="payVisible" [order]="paying()" [purpose]="payPurpose()" (done)="onChanged($event)" />
+<app-pre-order-cancel-dialog [(visible)]="cancelVisible" [order]="cancelling()" (cancelled)="onChanged($event)" />

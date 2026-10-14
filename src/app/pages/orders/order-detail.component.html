@@ -95,15 +95,25 @@
           <div class="kv muted"><span>Taxable value</span><span class="num">{{ b.taxableAmount | inr }}</span></div>
           <div class="kv"><span>CGST</span><span class="num">{{ b.cgst | inr }}</span></div>
           <div class="kv"><span>SGST</span><span class="num">{{ b.sgst | inr }}</span></div>
+          @if (b.deliveryCharge) {
+            <div class="kv"><span>Delivery Charge</span><span class="num">{{ b.deliveryCharge | inr }}</span></div>
+          }
           <div class="kv"><span>Round Off</span><span class="num">{{ b.roundOff | inr }}</span></div>
           <div class="kv grand"><span>Grand Total</span><span class="num">{{ b.grandTotal | inr }}</span></div>
         </div>
 
         <div class="card">
           <h2 class="card-title">Payments</h2>
+          @if (b.preOrderNo) {
+            <p class="muted small">Delivered from pre-order {{ b.preOrderNo }}</p>
+          }
           @for (p of b.payments; track $index) {
             <div class="kv">
-              <span>{{ modeLabel[p.mode] }} @if (p.reference) { <span class="muted small">(xx{{ p.reference }})</span> }</span>
+              <span>
+                {{ modeLabel[p.mode] }}
+                @if (p.isAdvance) { <span class="muted small">(advance)</span> }
+                @if (p.reference) { <span class="muted small">(xx{{ p.reference }})</span> }
+              </span>
               <span class="num">{{ p.amount | inr }}</span>
             </div>
           } @empty {

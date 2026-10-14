@@ -103,6 +103,12 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/billing/billing.component').then((m) => m.BillingComponent),
       },
       {
+        path: 'pre-orders',
+        title: 'Pre-Orders',
+        data: { roles: ALL },
+        loadComponent: () => import('./pages/pre-orders/pre-order-list.component').then((m) => m.PreOrderListComponent),
+      },
+      {
         path: 'orders',
         title: 'Orders',
         data: { roles: ALL },

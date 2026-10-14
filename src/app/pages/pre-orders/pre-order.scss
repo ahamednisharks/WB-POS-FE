@@ -1,0 +1,170 @@
+/* Pre-order form / dialogs — builds on purchase-shared.scss (line grid, totals, detail grid, view table). */
+
+.pre-lines {
+  --cols: 2rem minmax(11rem, 2fr) minmax(6rem, 1fr) 3.5rem minmax(5.5rem, 0.8fr) 6.5rem minmax(8rem, 1fr)
+    minmax(9rem, 1.4fr) 5.5rem minmax(6.5rem, 0.9fr) 2.5rem;
+  --lines-min: 72rem;
+}
+
+.c-actual {
+  justify-content: flex-end;
+  color: var(--text-muted);
+}
+
+/* Item Price vs Actual Price; click resets to the Actual Price. */
+.price-diff {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+
+  &.up {
+    color: var(--success);
+  }
+
+  &.down {
+    color: var(--danger);
+  }
+}
+
+.rate-diff {
+  font-size: 0.72rem;
+  font-weight: 600;
+
+  &.up {
+    color: var(--success);
+  }
+
+  &.down {
+    color: var(--danger);
+  }
+}
+
+.as-cards {
+  .c-notes,
+  .c-design {
+    grid-column: 1 / -1;
+  }
+
+  .c-actual {
+    justify-content: space-between;
+  }
+}
+
+.returning {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  color: var(--success);
+}
+
+.pay-box {
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  .form-section-title {
+    margin: 0;
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+.kv.balance {
+  font-weight: 700;
+  font-size: 1.05rem;
+
+  > span:first-child {
+    color: var(--text-main);
+    font-size: 0.95rem;
+  }
+}
+
+/* ---------- payment / cancel dialogs ---------- */
+.pay-summary {
+  background: #faf8f2;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.pay-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.pay-row {
+  display: grid;
+  grid-template-columns: auto minmax(8rem, 1fr) minmax(8rem, 1fr) 2.5rem;
+  gap: 0.5rem 0.75rem;
+  align-items: end;
+
+  @media (max-width: 575px) {
+    grid-template-columns: minmax(0, 1fr) 2.5rem;
+
+    > .field {
+      grid-column: 1;
+    }
+  }
+}
+
+.quick-links {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+}
+
+/* ---------- view ---------- */
+.design-thumb {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--border-soft);
+  display: block;
+}
+
+.view-table td.notes-cell {
+  white-space: normal;
+  min-width: 10rem;
+}
+
+.view-section-title {
+  margin: 1.25rem 0 0.6rem;
+}
+
+.view-bottom {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 21rem);
+  gap: 1rem 1.5rem;
+  margin-top: 1rem;
+  align-items: start;
+
+  @media (max-width: 767px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.view-footer-left {
+  margin-right: auto;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
