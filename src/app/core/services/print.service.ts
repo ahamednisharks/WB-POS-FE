@@ -10,9 +10,17 @@ export type PrintJob =
 
 const PAGE_STYLE_ID = 'wbpos-print-page';
 
+declare global {
+  interface Window {
+    /** Set by the Electron desktop app's preload (WB-POS/Desktop); absent in a normal browser. */
+    wbposDesktop?: { print(layout: 'roll' | 'a4'): Promise<void> };
+  }
+}
+
 /**
  * Renders the job into the print-only <app-print-host> (outside ion-app) and calls window.print().
  * Receipts / day-close slips use an 80mm roll layout, other documents A4.
+ * In the desktop app the page is printed silently to the printer chosen for that layout instead.
  */
 @Injectable({ providedIn: 'root' })
 export class PrintService {
@@ -26,7 +34,11 @@ export class PrintService {
     afterNextRender(
       () => {
         // Give images/fonts a tick to settle before the print dialog blocks the thread.
-        setTimeout(() => window.print(), 50);
+        setTimeout(() => {
+          const desktop = window.wbposDesktop;
+          if (desktop) void desktop.print(roll ? 'roll' : 'a4');
+          else window.print();
+        }, 50);
       },
       { injector: this.injector },
     );
