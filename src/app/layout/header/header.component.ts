@@ -3,9 +3,18 @@ import { IonButtons, IonHeader, IonMenuButton, IonToolbar } from '@ionic/angular
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 import { AuthService } from '../../core/services/auth.service';
+import { DesktopNotifyService, DesktopPermission } from '../../core/services/desktop-notify.service';
 import { AppTitleStrategy } from '../../core/services/title.strategy';
 import { initials } from '../../core/utils/format.util';
 import { StatusTagComponent } from '../../shared/components/status-tag/status-tag.component';
+
+/** Tooltip of the Windows-notifications bell. */
+const BELL_LABEL: Record<DesktopPermission, string> = {
+  granted: 'Windows notifications are on (click to test)',
+  default: 'Turn on Windows notifications',
+  denied: 'Windows notifications are blocked',
+  unsupported: 'Windows notifications are not available',
+};
 
 @Component({
   selector: 'app-header',
@@ -20,6 +29,16 @@ import { StatusTagComponent } from '../../shared/components/status-tag/status-ta
           <h2 class="title">{{ titles.pageTitle() }}</h2>
           @if (user(); as u) {
             <div class="user">
+              <p-button
+                [icon]="desktop.permission() === 'granted' ? 'pi pi-bell' : 'pi pi-bell-slash'"
+                [text]="true"
+                [rounded]="true"
+                severity="secondary"
+                [pTooltip]="bellLabel()"
+                tooltipPosition="bottom"
+                [ariaLabel]="bellLabel()"
+                (onClick)="desktop.enable()"
+              />
               <div class="avatar" aria-hidden="true">{{ userInitials() }}</div>
               <div class="who">
                 <span class="name">{{ u.name }}</span>
@@ -106,6 +125,8 @@ export class HeaderComponent {
   protected readonly titles = inject(AppTitleStrategy);
   protected readonly user = this.auth.user;
   protected readonly userInitials = computed(() => initials(this.user()?.name));
+  protected readonly desktop = inject(DesktopNotifyService);
+  protected readonly bellLabel = computed(() => BELL_LABEL[this.desktop.permission()]);
 
   logout(): void {
     this.auth.logout();

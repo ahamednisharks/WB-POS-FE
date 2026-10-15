@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { catchError, Observable, of } from 'rxjs';
+import { catchError, map, Observable, of } from 'rxjs';
 import {
   CustomerLookup,
   ListQuery,
@@ -12,6 +12,7 @@ import {
   PreOrderSummary,
 } from '../models';
 import { silentErrors } from '../interceptors/http-context.tokens';
+import { todayIST } from '../utils/date.util';
 import { ApiService } from './api.service';
 
 export interface PreOrderQuery extends ListQuery {
@@ -29,6 +30,21 @@ export class PreOrderService {
 
   list(query: PreOrderQuery): Observable<PagedResult<PreOrderSummary>> {
     return this.api.get<PagedResult<PreOrderSummary>>(this.path, query);
+  }
+
+  /** Open (booked / ready) orders to deliver today (IST), soonest first; null when it cannot be loaded. Used by the delivery alerts. */
+  dueToday(): Observable<PreOrderSummary[] | null> {
+    const today = todayIST();
+    return this.api
+      .get<PagedResult<PreOrderSummary>>(
+        this.path,
+        { from: today, to: today, status: 'OPEN', sort: 'deliveryAt', page: 1, limit: 100 },
+        { context: silentErrors() },
+      )
+      .pipe(
+        map((res) => res.data),
+        catchError(() => of(null)),
+      );
   }
 
   get(id: string): Observable<PreOrder> {

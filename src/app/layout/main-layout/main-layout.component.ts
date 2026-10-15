@@ -4,12 +4,13 @@ import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/ro
 import { IonContent, IonMenu, IonSplitPane } from '@ionic/angular/standalone';
 import { filter } from 'rxjs';
 import { HeaderComponent } from '../header/header.component';
+import { PreOrderAlertsComponent } from '../pre-order-alerts/pre-order-alerts.component';
 import { SidebarComponent } from '../sidebar/sidebar.component';
 
 /** ion-split-pane: sidebar always visible ≥ 992px, slide-in drawer below. */
 @Component({
   selector: 'app-main-layout',
-  imports: [RouterOutlet, IonSplitPane, IonMenu, IonContent, SidebarComponent, HeaderComponent],
+  imports: [RouterOutlet, IonSplitPane, IonMenu, IonContent, SidebarComponent, HeaderComponent, PreOrderAlertsComponent],
   template: `
     <ion-split-pane contentId="main-content" when="(min-width: 992px)">
       <ion-menu contentId="main-content" menuId="main-menu" type="overlay" class="app-menu">
@@ -24,6 +25,7 @@ import { SidebarComponent } from '../sidebar/sidebar.component';
         </ion-content>
       </div>
     </ion-split-pane>
+    <app-pre-order-alerts />
   `,
   styles: `
     .app-menu {

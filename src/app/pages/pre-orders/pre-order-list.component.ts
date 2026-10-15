@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { DatePickerModule } from 'primeng/datepicker';
 import { SelectModule } from 'primeng/select';
@@ -9,6 +10,7 @@ import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { ListQuery, PreOrder, PreOrderSummary } from '../../core/models';
 import { AuthService } from '../../core/services/auth.service';
+import { PreOrderAlertService } from '../../core/services/pre-order-alert.service';
 import { PreOrderService } from '../../core/services/pre-order.service';
 import { DateRange, dateToStr } from '../../core/utils/date.util';
 import { ListPageBase } from '../../shared/base/list-page.base';
@@ -69,6 +71,8 @@ import { PreOrderViewComponent } from './pre-order-view.component';
 export class PreOrderListComponent extends ListPageBase<PreOrderSummary> {
   private readonly preOrders = inject(PreOrderService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly deliveryAlerts = inject(PreOrderAlertService);
   protected readonly auth = inject(AuthService);
 
   protected readonly presetOptions = DELIVERY_PRESET_OPTIONS;
@@ -98,6 +102,20 @@ export class PreOrderListComponent extends ListPageBase<PreOrderSummary> {
   constructor() {
     super();
     this.sort = 'deliveryAt';
+    // Links from the delivery alerts: ?view=<id> opens that order, ?delivery=TODAY lists today's open deliveries.
+    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      const viewId = params.get('view');
+      const delivery = params.get('delivery');
+      if (!viewId && !delivery) return;
+      if (delivery === 'TODAY') {
+        this.status.set('OPEN');
+        this.onPreset('TODAY');
+      }
+      if (viewId) this.view({ id: viewId });
+      // Drop the params so the same link works again and a reload does not reopen the order
+      // (next tick: this can run while the navigation that opened the screen is still finishing).
+      setTimeout(() => void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true }));
+    });
   }
 
   protected fetch(query: ListQuery) {
@@ -146,7 +164,7 @@ export class PreOrderListComponent extends ListPageBase<PreOrderSummary> {
   }
 
   /** Loads the full order (lines, payments) before opening a dialog that needs it. */
-  private withFull(row: PreOrderSummary, then: (o: PreOrder) => void): void {
+  private withFull(row: Pick<PreOrderSummary, 'id'>, then: (o: PreOrder) => void): void {
     this.opening.set(row.id);
     this.preOrders.get(row.id).subscribe({
       next: (o) => {
@@ -170,7 +188,7 @@ export class PreOrderListComponent extends ListPageBase<PreOrderSummary> {
     });
   }
 
-  protected view(row: PreOrderSummary): void {
+  protected view(row: Pick<PreOrderSummary, 'id'>): void {
     this.withFull(row, (o) => {
       this.viewing.set(o);
       this.viewVisible.set(true);
@@ -205,5 +223,7 @@ export class PreOrderListComponent extends ListPageBase<PreOrderSummary> {
   protected onChanged(o: PreOrder): void {
     if (this.viewing()?.id === o.id) this.viewing.set(o);
     this.load();
+    // A delivered / cancelled / re-dated order stops (or starts) alerting straight away.
+    this.deliveryAlerts.refresh();
   }
 }
