@@ -1,37 +1,382 @@
 /* ===========================================================
    WB-POS global styles
    Ionic core CSS + PrimeIcons are loaded from angular.json.
-   PrimeNG theme (Aura + brand yellow) is injected at runtime.
+   PrimeNG theme (Aura) is injected at runtime and reads the --brand-* scale below.
+
+   Colour themes: :root holds Golden Ivory (the default). Each other theme overrides the
+   same variables in an html[data-theme='…'] block; ThemeService sets the attribute.
+   Components use only these variables, never hex values, so they follow the theme.
    =========================================================== */
 
 :root {
-  --brand: #f5b700;
-  --brand-soft: #fff4c2;
-  --brand-softer: #fffbeb;
-  --brand-ink: #2b2104;
+  color-scheme: light;
+
+  /* Brand scale; also PrimeNG's primary palette (core/theme/bakery-preset.ts). */
+  --brand-50: #fffbeb;
+  --brand-100: #fff4c2;
+  --brand-200: #ffe98a;
+  --brand-300: #ffdb4d;
+  --brand-400: #facc15;
+  --brand-500: #f5b700;
+  --brand-600: #d99a00;
+  --brand-700: #b37800;
+  --brand-800: #8c5c00;
+  --brand-900: #6b4600;
+  --brand-950: #3d2700;
+  --brand-rgb: 245, 183, 0;
+
+  --brand: var(--brand-500);
+  --brand-soft: var(--brand-100);
+  --brand-softer: var(--brand-50);
+  --brand-border: var(--brand-200);
+  --brand-ink: #2b2104; /* text on a brand-coloured fill */
+  --brand-ink-rgb: 43, 33, 4;
+  --brand-ink-soft: #2b2104; /* strong text on brand-soft / brand-softer */
+  --brand-text: var(--brand-800); /* links, accent text and icons on cards */
+  --brand-text-strong: #5a3d00; /* text in brand-tinted banners and codes */
+  --brand-icon: var(--brand-700); /* small accent icons, focus outlines */
+  --brand-icon-soft: #d9a300; /* large faded icons (empty states) */
+  --brand-highlight-text: var(--brand-950); /* selected rows / options in PrimeNG */
+
   --surface-page: #f6f5f1;
   --surface-card: #ffffff;
+  --surface-header: #ffffff;
+  --surface-subtle: #faf8f2; /* table heads, totals, steppers */
+  --surface-muted: #f2efe6; /* code chips, small tags */
   --border-soft: #e7e3d8;
+  --border-faint: #f1eee6;
+  --border-accent: #eadfbd; /* dashed guides */
+  --border-accent-strong: #d6c48c;
+
   --text-main: #1f2328;
+  --text-soft: #3a3f45; /* field labels, table heads */
   --text-muted: #6b6f76;
+  --text-faint: #8a8f96; /* secondary icons */
+  --on-solid: #ffffff; /* text on success / dark badges */
+
   --danger: #dc2626;
+  --danger-soft: #fdecec;
+  --danger-text: #b91c1c;
+  --danger-border: #f8caca;
   --success: #16a34a;
+  --success-soft: #ecfdf3;
+  --success-text: #15803d;
+  --success-border: #bfe8cd;
+  --warn-text: #b45309;
+
+  /* Payment modes: chips, stat icons and the dashboard charts. */
+  --pay-upi-soft: #e8e7fd;
+  --pay-upi-text: #4338ca;
+  --pay-card-soft: #dcf3f1;
+  --pay-card-text: #0f766e;
+  --chart-cash: #e0a800;
+  --chart-cash-hover: #c99700;
+  --chart-upi: #4f46e5;
+  --chart-card: #0d9488;
+  --chart-grid: #eeebe3;
+  --chart-tick: #6b6f76;
+  --chart-tooltip: #1f2328;
+
+  --sidebar-bg: #ffffff;
+  --sidebar-border: var(--border-soft);
+  --sidebar-title: var(--text-main);
+  --sidebar-sub: var(--text-muted);
+  --sidebar-text: #3a3f45;
+  --sidebar-icon: #8a8f96;
+  --sidebar-hover: #faf6e8;
+  --sidebar-active-bg: var(--brand-soft);
+  --sidebar-active-text: var(--brand-ink-soft);
+  --sidebar-active-icon: var(--brand-text);
+  --sidebar-guide: #eadfbd;
+
+  /* Billing tiles: one background per category. */
+  --tile-1: #fff4c2;
+  --tile-2: #ffe4d6;
+  --tile-3: #e3f2e1;
+  --tile-4: #e0ecff;
+  --tile-5: #f3e5ff;
+  --tile-6: #ffe0ea;
+  --tile-7: #e0f7f4;
+  --tile-ink: rgba(61, 39, 0, 0.55);
+  --tile-chip-bg: rgba(255, 255, 255, 0.9);
+  --tile-chip-text: var(--brand-900);
+  --combo-tile: linear-gradient(135deg, #fff4c2, #ffe0b3);
+
+  /* Weighing-scale read-out. */
+  --display-bg: #1f2328;
+  --display-text: #ffffff;
+  --display-accent: var(--brand);
+
   --radius: 12px;
   --shadow-card: 0 1px 2px rgba(31, 35, 40, 0.06), 0 1px 3px rgba(31, 35, 40, 0.04);
+  --shadow-pop: 0 10px 28px rgba(31, 35, 40, 0.18), 0 2px 6px rgba(31, 35, 40, 0.08);
+  --shadow-bar: 0 -4px 16px rgba(0, 0, 0, 0.06);
+  --shadow-login: 0 12px 40px rgba(107, 70, 0, 0.12);
+  --shadow-logo: 0 6px 16px rgba(107, 70, 0, 0.3);
 
   --ion-font-family: 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --ion-background-color: var(--surface-page);
   --ion-text-color: var(--text-main);
-  --ion-toolbar-background: #ffffff;
+  --ion-toolbar-background: var(--surface-header);
   --ion-toolbar-color: var(--text-main);
   --ion-toolbar-border-color: var(--border-soft);
 
-  --ion-color-primary: #f5b700;
-  --ion-color-primary-rgb: 245, 183, 0;
-  --ion-color-primary-contrast: #2b2104;
-  --ion-color-primary-contrast-rgb: 43, 33, 4;
-  --ion-color-primary-shade: #d8a100;
-  --ion-color-primary-tint: #f6be1a;
+  --ion-color-primary: var(--brand);
+  --ion-color-primary-rgb: var(--brand-rgb);
+  --ion-color-primary-contrast: var(--brand-ink);
+  --ion-color-primary-contrast-rgb: var(--brand-ink-rgb);
+  --ion-color-primary-shade: var(--brand-600);
+  --ion-color-primary-tint: var(--brand-400);
+}
+
+/* ---------- theme: Espresso Dark ---------- */
+html[data-theme='espresso'] {
+  color-scheme: dark;
+
+  --brand-50: #fef8ec;
+  --brand-100: #fcecc8;
+  --brand-200: #f9da93;
+  --brand-300: #f6c865;
+  --brand-400: #f4be52;
+  --brand-500: #f2b544;
+  --brand-600: #d99a2b;
+  --brand-700: #b57b1c;
+  --brand-800: #8f5f15;
+  --brand-900: #6b4710;
+  --brand-950: #3d2809;
+  --brand-rgb: 242, 181, 68;
+
+  --brand-soft: #3a2c1e;
+  --brand-softer: #2b221a;
+  --brand-border: #5a4527;
+  --brand-ink: #2a1a0a;
+  --brand-ink-rgb: 42, 26, 10;
+  --brand-ink-soft: #f6d79a;
+  --brand-text: #f2c46b;
+  --brand-text-strong: #f6d79a;
+  --brand-icon: #e8b04f;
+  --brand-icon-soft: #8f6a2c;
+  --brand-highlight-text: #f6d79a;
+
+  --surface-page: #1a1512;
+  --surface-card: #241d18;
+  --surface-header: #201a16;
+  --surface-subtle: #2b231d;
+  --surface-muted: #332a23;
+  --border-soft: #3a3029;
+  --border-faint: #2f2721;
+  --border-accent: #4a3b2c;
+  --border-accent-strong: #6b5538;
+
+  --text-main: #f3ece2;
+  --text-soft: #ddd2c4;
+  --text-muted: #a89c8c;
+  --text-faint: #85786a;
+  --on-solid: #10231a;
+
+  --danger: #f87171;
+  --danger-soft: #3d2020;
+  --danger-text: #fca5a5;
+  --danger-border: #6b2c2c;
+  --success: #4ade80;
+  --success-soft: #1c3324;
+  --success-text: #86efac;
+  --success-border: #2f5a3c;
+  --warn-text: #fbbf24;
+
+  --pay-upi-soft: #3d2a21;
+  --pay-upi-text: #e8b39b;
+  --pay-card-soft: #1f322b;
+  --pay-card-text: #a7d3be;
+  --chart-cash: #f2b544;
+  --chart-cash-hover: #f6c865;
+  --chart-upi: #c98a6b;
+  --chart-card: #8fbfa8;
+  --chart-grid: #3a3029;
+  --chart-tick: #a89c8c;
+  --chart-tooltip: #0f0c0a;
+
+  --sidebar-bg: #15110e;
+  --sidebar-border: #2a221c;
+  --sidebar-title: #f3ece2;
+  --sidebar-sub: #a89c8c;
+  --sidebar-text: #ddd2c4;
+  --sidebar-icon: #8f8274;
+  --sidebar-hover: #221b16;
+  --sidebar-active-bg: #3a2c1e;
+  --sidebar-active-text: #f6d79a;
+  --sidebar-active-icon: #f2b544;
+  --sidebar-guide: #3a3029;
+
+  --tile-1: #3a2c1e;
+  --tile-2: #3b2620;
+  --tile-3: #24302a;
+  --tile-4: #222b38;
+  --tile-5: #2f2538;
+  --tile-6: #3a2229;
+  --tile-7: #1f3331;
+  --tile-ink: rgba(255, 240, 220, 0.55);
+  --tile-chip-bg: rgba(26, 21, 18, 0.85);
+  --tile-chip-text: #f6d79a;
+  --combo-tile: linear-gradient(135deg, #3a2c1e, #4a3220);
+
+  --display-bg: #0f0c0a;
+  --display-text: #f3ece2;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.25);
+  --shadow-pop: 0 10px 28px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.35);
+  --shadow-bar: 0 -4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-login: 0 12px 40px rgba(0, 0, 0, 0.45);
+  --shadow-logo: 0 6px 16px rgba(0, 0, 0, 0.5);
+}
+
+/* ---------- theme: Berry Rose ---------- */
+html[data-theme='berry'] {
+  --brand-50: #fdf2f5;
+  --brand-100: #f9dfe6;
+  --brand-200: #f2bccb;
+  --brand-300: #e68aa4;
+  --brand-400: #cc4a71;
+  --brand-500: #a3173f;
+  --brand-600: #8c1236;
+  --brand-700: #740f2d;
+  --brand-800: #5c0c24;
+  --brand-900: #470a1c;
+  --brand-950: #2b0611;
+  --brand-rgb: 163, 23, 63;
+
+  --brand-ink: #ffffff;
+  --brand-ink-rgb: 255, 255, 255;
+  --brand-ink-soft: #5c0c24;
+  --brand-text: var(--brand-600);
+  --brand-text-strong: var(--brand-800);
+  --brand-icon: var(--brand-500);
+  --brand-icon-soft: #e68aa4;
+  --brand-highlight-text: var(--brand-800);
+
+  --surface-page: #faf5f3;
+  --surface-subtle: #fcf7f7;
+  --surface-muted: #f6eaec;
+  --border-soft: #eedfe1;
+  --border-faint: #f6ecee;
+  --border-accent: #ecc9d3;
+  --border-accent-strong: #d993a8;
+
+  --text-main: #2a1a1f;
+  --text-soft: #4a3a3f;
+  --text-muted: #7a6a70;
+  --text-faint: #a2939a;
+
+  --pay-upi-soft: #fbe4ec;
+  --pay-upi-text: #b0365c;
+  --pay-card-soft: #e3efe6;
+  --pay-card-text: #3f6b4b;
+  --chart-cash: #a3173f;
+  --chart-cash-hover: #8c1236;
+  --chart-upi: #e9a3b5;
+  --chart-card: #4f7a5a;
+  --chart-grid: #f1e6e8;
+  --chart-tick: #7a6a70;
+  --chart-tooltip: #2a1a1f;
+
+  --sidebar-text: #4a3a3f;
+  --sidebar-icon: #a2939a;
+  --sidebar-hover: #fcf1f4;
+  --sidebar-active-text: var(--brand-700);
+  --sidebar-active-icon: var(--brand-500);
+  --sidebar-guide: #ecc9d3;
+
+  --tile-1: #f9dfe6;
+  --tile-2: #ffe4d6;
+  --tile-3: #e8f1e6;
+  --tile-4: #e6eaf7;
+  --tile-5: #f1e4f3;
+  --tile-6: #fde7ec;
+  --tile-7: #e3f2ef;
+  --tile-ink: rgba(71, 10, 28, 0.5);
+  --tile-chip-text: var(--brand-800);
+  --combo-tile: linear-gradient(135deg, #f9dfe6, #fde3d8);
+  --display-accent: var(--brand-300);
+
+  --shadow-login: 0 12px 40px rgba(92, 12, 36, 0.12);
+  --shadow-logo: 0 6px 16px rgba(92, 12, 36, 0.3);
+}
+
+/* ---------- theme: Forest Green ---------- */
+html[data-theme='forest'] {
+  --brand-50: #edf7f2;
+  --brand-100: #d5ecdf;
+  --brand-200: #aed8c2;
+  --brand-300: #7fbf9f;
+  --brand-400: #4ea37c;
+  --brand-500: #1f7a55;
+  --brand-600: #1a6849;
+  --brand-700: #15553c;
+  --brand-800: #11432f;
+  --brand-900: #0d3324;
+  --brand-950: #072016;
+  --brand-rgb: 31, 122, 85;
+
+  --brand-ink: #ffffff;
+  --brand-ink-rgb: 255, 255, 255;
+  --brand-ink-soft: var(--brand-800);
+  --brand-text: var(--brand-600);
+  --brand-text-strong: var(--brand-800);
+  --brand-icon: var(--brand-500);
+  --brand-icon-soft: #7fbf9f;
+  --brand-highlight-text: var(--brand-800);
+
+  --surface-page: #f1f4f0;
+  --surface-subtle: #f6f8f5;
+  --surface-muted: #e8eee7;
+  --border-soft: #dde5dc;
+  --border-faint: #edf1ec;
+  --border-accent: #c5dbcc;
+  --border-accent-strong: #8fbfa3;
+
+  --text-main: #1c2b24;
+  --text-soft: #34443c;
+  --text-muted: #66756d;
+  --text-faint: #8e9b94;
+
+  --pay-upi-soft: #fbf1d4;
+  --pay-upi-text: #8a6500;
+  --pay-card-soft: #e2ebf7;
+  --pay-card-text: #2f5a94;
+  --chart-cash: #1f7a55;
+  --chart-cash-hover: #1a6849;
+  --chart-upi: #e0a800;
+  --chart-card: #3b6fb6;
+  --chart-grid: #e6ece5;
+  --chart-tick: #66756d;
+  --chart-tooltip: #1c2b24;
+
+  --sidebar-bg: #1b3d2f;
+  --sidebar-border: #163326;
+  --sidebar-title: #ffffff;
+  --sidebar-sub: #9fbfae;
+  --sidebar-text: #dcebe2;
+  --sidebar-icon: #8fb5a1;
+  --sidebar-hover: #234b3a;
+  --sidebar-active-bg: #2c5a45;
+  --sidebar-active-text: #ffffff;
+  --sidebar-active-icon: #a8e0c2;
+  --sidebar-guide: #2f5a46;
+
+  --tile-1: #d5ecdf;
+  --tile-2: #ffe4d6;
+  --tile-3: #fbf1d4;
+  --tile-4: #e2ebf7;
+  --tile-5: #efe6f6;
+  --tile-6: #fde4ea;
+  --tile-7: #dff2ee;
+  --tile-ink: rgba(13, 51, 36, 0.5);
+  --tile-chip-text: var(--brand-800);
+  --combo-tile: linear-gradient(135deg, #d5ecdf, #fbf1d4);
+  --display-accent: var(--brand-300);
+
+  --shadow-login: 0 12px 40px rgba(17, 67, 47, 0.12);
+  --shadow-logo: 0 6px 16px rgba(17, 67, 47, 0.3);
 }
 
 html,
@@ -46,8 +391,13 @@ body {
   box-sizing: border-box;
 }
 
+/* Native buttons default to black text; follow the theme instead. */
+button {
+  color: inherit;
+}
+
 a {
-  color: #8c5c00;
+  color: var(--brand-text);
 }
 
 /* ---------- page scaffolding ---------- */
@@ -164,7 +514,7 @@ a {
   > label {
     font-size: 0.85rem;
     font-weight: 500;
-    color: #3a3f45;
+    color: var(--text-soft);
   }
 
   .p-inputtext,
@@ -213,7 +563,7 @@ a {
 }
 
 .warn-text {
-  color: #b45309;
+  color: var(--warn-text);
   font-size: 0.78rem;
 }
 
@@ -223,7 +573,7 @@ a {
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #8c5c00;
+  color: var(--brand-text);
   border-bottom: 1px dashed var(--border-soft);
   padding-bottom: 0.35rem;
   margin-top: 0.25rem;
@@ -238,7 +588,7 @@ a {
 }
 
 .readonly-box {
-  background: #f7f6f2;
+  background: var(--surface-subtle);
   border: 1px solid var(--border-soft);
   border-radius: 6px;
   padding: 0.55rem 0.75rem;
@@ -251,10 +601,10 @@ a {
 /* ---------- tables ---------- */
 .p-datatable {
   .p-datatable-thead > tr > th {
-    background: #faf8f2;
+    background: var(--surface-subtle);
     font-size: 0.8rem;
     font-weight: 600;
-    color: #4b4f55;
+    color: var(--text-soft);
     white-space: nowrap;
   }
 
@@ -263,7 +613,7 @@ a {
   }
 
   .p-datatable-tfoot > tr > td {
-    background: #faf8f2;
+    background: var(--surface-subtle);
     font-weight: 700;
   }
 }
@@ -284,7 +634,7 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #b37800;
+  color: var(--brand-icon);
   font-weight: 700;
   font-size: 0.8rem;
   border: 1px solid var(--border-soft);
@@ -296,8 +646,8 @@ a {
 
 .code {
   font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
-  background: #f4f1e6;
-  color: #5a3d00;
+  background: var(--surface-muted);
+  color: var(--brand-text-strong);
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 0.8rem;
@@ -427,7 +777,7 @@ a {
 .link-btn {
   background: none;
   border: none;
-  color: #8c5c00;
+  color: var(--brand-text);
   font-weight: 600;
   cursor: pointer;
   padding: 0;
@@ -440,10 +790,10 @@ a {
   gap: 0.75rem;
   align-items: flex-start;
   background: var(--brand-softer);
-  border: 1px solid #ffe98a;
+  border: 1px solid var(--brand-border);
   border-radius: var(--radius);
   padding: 0.85rem 1rem;
-  color: #5a3d00;
+  color: var(--brand-text-strong);
 
   .pi {
     font-size: 1.2rem;
@@ -481,5 +831,12 @@ a {
     display: block !important;
     position: static !important;
     color: #000;
+    /* Paper is always black on white, whatever the screen theme (helpers like .muted read these). */
+    --text-main: #000;
+    --text-soft: #000;
+    --text-muted: #444;
+    --border-soft: #999;
+    --danger: #000;
+    --success: #000;
   }
 }

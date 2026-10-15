@@ -1,5 +1,5 @@
 .login-bg {
-  --background: radial-gradient(1200px 500px at 50% -10%, #ffe98a 0%, #fff4c2 35%, #f6f5f1 70%);
+  --background: radial-gradient(1200px 500px at 50% -10%, var(--brand-border) 0%, var(--brand-soft) 35%, var(--surface-page) 70%);
 }
 
 .wrap {
@@ -15,10 +15,10 @@
 .card {
   width: 100%;
   max-width: 400px;
-  background: #fff;
+  background: var(--surface-card);
   border: 1px solid var(--border-soft);
   border-radius: 18px;
-  box-shadow: 0 12px 40px rgba(107, 70, 0, 0.12);
+  box-shadow: var(--shadow-login);
   padding: 2rem 1.75rem 1.5rem;
   text-align: center;
 }
@@ -31,7 +31,7 @@
   border-radius: 50%;
   background: #000;
   object-fit: cover;
-  box-shadow: 0 6px 16px rgba(107, 70, 0, 0.3);
+  box-shadow: var(--shadow-logo);
 }
 
 h1 {

@@ -46,7 +46,7 @@ import { UploadedFile } from '../../../core/models';
       padding: 0.35rem 0.6rem;
       border: 1px solid var(--border-soft);
       border-radius: 8px;
-      background: #faf8f2;
+      background: var(--surface-subtle);
     }
     .chip a {
       overflow: hidden;

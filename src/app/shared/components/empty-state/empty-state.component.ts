@@ -31,7 +31,7 @@ import { ButtonModule } from 'primeng/button';
     }
     i {
       font-size: 2rem;
-      color: #d9a300;
+      color: var(--brand-icon-soft);
       margin-bottom: 0.25rem;
     }
     h3 {

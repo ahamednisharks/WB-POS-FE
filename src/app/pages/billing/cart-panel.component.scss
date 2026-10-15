@@ -9,7 +9,7 @@
   flex-direction: column;
   height: 100%;
   min-height: 0;
-  background: #fff;
+  background: var(--surface-card);
 }
 
 .cart-head {
@@ -32,7 +32,7 @@
   }
 
   .last strong {
-    color: #8c5c00;
+    color: var(--brand-text);
   }
 }
 
@@ -56,7 +56,7 @@
     left: 0.6rem;
     top: 50%;
     transform: translateY(-50%);
-    color: #a0a4aa;
+    color: var(--text-faint);
     font-size: 0.8rem;
   }
 
@@ -72,7 +72,7 @@
     top: 50%;
     transform: translateY(-50%);
     font-size: 0.8rem;
-    color: #b37800;
+    color: var(--brand-icon);
   }
 }
 
@@ -89,7 +89,7 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.5rem;
-  border-bottom: 1px dashed #eee7d3;
+  border-bottom: 1px dashed var(--border-accent);
 
   .name {
     font-weight: 600;
@@ -99,7 +99,7 @@
   }
 
   .combo-icon {
-    color: #b37800;
+    color: var(--brand-icon);
     font-size: 0.8rem;
   }
 
@@ -125,7 +125,7 @@
   .step,
   .qty {
     border: none;
-    background: #fff;
+    background: var(--surface-card);
     min-width: 34px;
     height: 34px;
     cursor: pointer;
@@ -134,7 +134,7 @@
   }
 
   .step {
-    background: #faf8f2;
+    background: var(--surface-subtle);
     font-size: 0.75rem;
 
     &:hover {
@@ -159,7 +159,7 @@
 .rm {
   border: none;
   background: none;
-  color: #b0b4ba;
+  color: var(--text-faint);
   cursor: pointer;
   width: 28px;
   height: 28px;
@@ -167,7 +167,7 @@
 
   &:hover {
     color: var(--danger);
-    background: #fdecec;
+    background: var(--danger-soft);
   }
 }
 
@@ -178,7 +178,7 @@
 
   i {
     font-size: 2rem;
-    color: #e0c56b;
+    color: var(--brand-icon-soft);
   }
 
   p {
@@ -191,7 +191,7 @@
 .totals {
   border-top: 1px solid var(--border-soft);
   padding: 0.6rem 1rem 0.4rem;
-  background: #fffdf6;
+  background: var(--surface-subtle);
 
   .row {
     display: flex;
@@ -202,7 +202,7 @@
   }
 
   .less {
-    color: #15803d;
+    color: var(--success-text);
   }
 
   .discount {
@@ -227,13 +227,13 @@
     align-items: baseline;
     margin-top: 0.35rem;
     padding-top: 0.45rem;
-    border-top: 1px dashed #e7dcb8;
+    border-top: 1px dashed var(--border-accent);
     font-size: 1.05rem;
     font-weight: 700;
 
     .num {
       font-size: 1.6rem;
-      color: var(--brand-ink);
+      color: var(--brand-ink-soft);
     }
   }
 }

@@ -9,13 +9,13 @@
   height: 72px;
   flex: 0 0 72px;
   border-radius: 10px;
-  border: 1px dashed #d8d2c0;
+  border: 1px dashed var(--border-accent-strong);
   background: var(--brand-softer);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  color: #c9a53a;
+  color: var(--brand-icon-soft);
   font-size: 1.5rem;
 
   &.round {

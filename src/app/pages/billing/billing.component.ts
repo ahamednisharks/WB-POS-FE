@@ -34,7 +34,8 @@ interface CatalogTab {
 
 type PadTarget = { kind: 'item'; item: Item } | { kind: 'line'; line: CartLine };
 
-const TILE_COLORS = ['#fff4c2', '#ffe4d6', '#e3f2e1', '#e0ecff', '#f3e5ff', '#ffe0ea', '#e0f7f4'];
+/** Category tile backgrounds; each theme sets its own --tile-1 … --tile-7 in styles.scss. */
+const TILE_COLORS = [1, 2, 3, 4, 5, 6, 7].map((n) => `var(--tile-${n})`);
 
 @Component({
   selector: 'app-billing',

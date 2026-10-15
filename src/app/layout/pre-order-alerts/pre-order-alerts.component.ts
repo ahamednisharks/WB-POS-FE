@@ -77,7 +77,7 @@ const MAX_CARDS = 3;
       border: 1px solid var(--border-soft);
       border-left: 5px solid var(--brand);
       border-radius: var(--radius);
-      box-shadow: 0 10px 28px rgba(31, 35, 40, 0.18), 0 2px 6px rgba(31, 35, 40, 0.08);
+      box-shadow: var(--shadow-pop);
       padding: 0.7rem 0.85rem 0.75rem;
       animation: alert-in 0.25s ease-out;
     }
@@ -90,7 +90,7 @@ const MAX_CARDS = 3;
       gap: 0.45rem;
     }
     .bell {
-      color: #b58500;
+      color: var(--brand-icon);
       animation: ring 1.6s ease-in-out infinite;
       transform-origin: 50% 0;
     }
@@ -104,7 +104,7 @@ const MAX_CARDS = 3;
       font-weight: 700;
       letter-spacing: 0.04em;
       text-transform: uppercase;
-      color: #8a6500;
+      color: var(--brand-text);
     }
     .close {
       border: 0;
@@ -147,7 +147,7 @@ const MAX_CARDS = 3;
     .more {
       border: 1px solid var(--border-soft);
       background: var(--brand-softer);
-      color: var(--brand-ink);
+      color: var(--brand-ink-soft);
       border-radius: var(--radius);
       padding: 0.55rem 0.85rem;
       font-weight: 600;
@@ -165,7 +165,7 @@ const MAX_CARDS = 3;
       gap: 0.55rem;
       border: 1px solid var(--border-soft);
       background: var(--brand-softer);
-      color: var(--brand-ink);
+      color: var(--brand-ink-soft);
       border-radius: var(--radius);
       padding: 0.55rem 0.5rem 0.55rem 0.85rem;
       box-shadow: var(--shadow-card);

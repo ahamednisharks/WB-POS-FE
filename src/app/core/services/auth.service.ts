@@ -60,6 +60,26 @@ export class AuthService {
     );
   }
 
+  /** Updates fields of the logged-in user in memory and in the stored session. */
+  patchUser(patch: Partial<AuthUser>): void {
+    const s = this.session();
+    if (!s) return;
+    const next: StoredSession = { ...s, user: { ...s.user, ...patch } };
+    this.storage.set(SESSION_KEY, next);
+    this.session.set(next);
+  }
+
+  /** Re-reads the theme from the server, so a theme picked on another PC shows up on a remembered session. */
+  refreshTheme(): void {
+    if (!this.isLoggedIn()) return;
+    this.api.get<{ theme?: string } | null>('/auth/me', undefined, { context: silentErrors() }).subscribe({
+      next: (me) => {
+        if (me?.theme && me.theme !== this.user()?.theme) this.patchUser({ theme: me.theme });
+      },
+      error: () => undefined,
+    });
+  }
+
   logout(navigate = true): void {
     this.clear();
     if (navigate) void this.router.navigateByUrl('/login');

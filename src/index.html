@@ -12,6 +12,19 @@
     <meta name="msapplication-tap-highlight" content="no" />
     <meta name="theme-color" content="#F5B700" />
     <link rel="icon" type="image/jpeg" href="images/WB-logo.jpg" />
+    <script>
+      // Apply the last colour theme used on this PC before the app starts, so the page does not flash gold.
+      // ThemeService (core/services/theme.service.ts) writes 'wbpos.theme' and takes over once the app loads.
+      (function () {
+        try {
+          var theme = JSON.parse(localStorage.getItem('wbpos.theme') || 'null');
+          if (theme === 'espresso' || theme === 'berry' || theme === 'forest') {
+            document.documentElement.setAttribute('data-theme', theme);
+            if (theme === 'espresso') document.documentElement.classList.add('app-dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <app-root></app-root>

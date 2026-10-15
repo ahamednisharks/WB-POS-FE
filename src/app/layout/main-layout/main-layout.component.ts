@@ -30,12 +30,12 @@ import { SidebarComponent } from '../sidebar/sidebar.component';
   styles: `
     .app-menu {
       --width: 264px;
-      --border: 1px solid var(--border-soft);
+      --border: 1px solid var(--sidebar-border);
     }
     ion-split-pane {
       --side-width: 264px;
       --side-max-width: 264px;
-      --border: 1px solid var(--border-soft);
+      --border: 1px solid var(--sidebar-border);
     }
     .main-content {
       --background: var(--surface-page);

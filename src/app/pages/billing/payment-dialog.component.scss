@@ -9,13 +9,13 @@
   justify-content: space-between;
   align-items: baseline;
   background: var(--brand-softer);
-  border: 1px solid #ffe98a;
+  border: 1px solid var(--brand-border);
   border-radius: 12px;
   padding: 0.75rem 1rem;
 
   strong {
     font-size: 1.7rem;
-    color: var(--brand-ink);
+    color: var(--brand-ink-soft);
   }
 }
 
@@ -33,7 +33,7 @@
   padding: 0.75rem 0.25rem;
   border: 1.5px solid var(--border-soft);
   border-radius: 12px;
-  background: #fff;
+  background: var(--surface-card);
   cursor: pointer;
   font: inherit;
   font-weight: 600;
@@ -42,7 +42,7 @@
 
   i {
     font-size: 1.25rem;
-    color: #8a8f96;
+    color: var(--text-faint);
   }
 
   &.active {
@@ -50,7 +50,7 @@
     background: var(--brand-soft);
 
     i {
-      color: #8c5c00;
+      color: var(--brand-text);
     }
   }
 
@@ -76,7 +76,7 @@
   padding: 0.6rem 0.5rem;
   border-radius: 10px;
   border: 1px solid var(--border-soft);
-  background: #faf8f2;
+  background: var(--surface-subtle);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
@@ -97,15 +97,15 @@
   align-items: baseline;
   padding: 0.6rem 1rem;
   border-radius: 10px;
-  background: #ecfdf3;
-  color: #166534;
+  background: var(--success-soft);
+  color: var(--success-text);
 
   strong {
     font-size: 1.35rem;
   }
 
   &.neg {
-    background: #fef2f2;
+    background: var(--danger-soft);
     color: var(--danger);
   }
 }
@@ -120,18 +120,18 @@
 .qr {
   width: 150px;
   height: 150px;
-  border: 2px dashed #d6c48c;
+  border: 2px dashed var(--border-accent-strong);
   border-radius: 14px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
-  background: repeating-linear-gradient(45deg, #fffdf5, #fffdf5 8px, #fff8e1 8px, #fff8e1 16px);
+  background: repeating-linear-gradient(45deg, var(--surface-card) 0 8px, var(--brand-softer) 8px 16px);
 
   i {
     font-size: 4.5rem;
-    color: #3d2700;
+    color: var(--brand-ink-soft);
   }
 
   .qr-amt {

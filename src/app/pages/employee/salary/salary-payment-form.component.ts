@@ -61,7 +61,7 @@ function presentWithinWorking(c: AbstractControl): ValidationErrors | null {
       gap: 0.5rem;
       flex-wrap: wrap;
       background: var(--brand-softer);
-      border-color: #ffe98a;
+      border-color: var(--brand-border);
     }
   `,
 })

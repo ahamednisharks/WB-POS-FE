@@ -54,8 +54,8 @@ import { FormDialogComponent } from '../../shared/components/form-dialog/form-di
       justify-content: flex-end;
       align-items: baseline;
       gap: 0.4rem;
-      background: #1f2328;
-      color: #fff;
+      background: var(--display-bg);
+      color: var(--display-text);
       border-radius: 12px;
       padding: 0.75rem 1rem;
       font-variant-numeric: tabular-nums;
@@ -65,7 +65,7 @@ import { FormDialogComponent } from '../../shared/components/form-dialog/form-di
       font-weight: 700;
     }
     .unit {
-      color: #f5b700;
+      color: var(--display-accent);
       font-weight: 600;
     }
     .presets {
@@ -76,7 +76,7 @@ import { FormDialogComponent } from '../../shared/components/form-dialog/form-di
     .presets button {
       padding: 0.5rem 0;
       border-radius: 8px;
-      border: 1px solid #ffe98a;
+      border: 1px solid var(--brand-border);
       background: var(--brand-softer);
       font: inherit;
       font-weight: 600;
@@ -91,7 +91,7 @@ import { FormDialogComponent } from '../../shared/components/form-dialog/form-di
       height: 56px;
       border-radius: 12px;
       border: 1px solid var(--border-soft);
-      background: #fff;
+      background: var(--surface-card);
       font: inherit;
       font-size: 1.35rem;
       font-weight: 600;

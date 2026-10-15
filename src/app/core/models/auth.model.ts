@@ -6,6 +6,8 @@ export interface AuthUser {
   role: Role;
   username?: string;
   employeeId?: string;
+  /** Colour theme saved on the user's account (see core/theme/themes.ts). */
+  theme?: string;
 }
 
 export interface LoginRequest {

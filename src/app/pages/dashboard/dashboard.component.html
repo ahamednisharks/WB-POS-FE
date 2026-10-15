@@ -90,7 +90,7 @@
               <p-chart
                 type="doughnut"
                 [data]="donutData()"
-                [options]="donutOptions"
+                [options]="donutOptions()"
                 height="210px"
                 ariaLabel="Payment split doughnut chart: cash, UPI and card"
               />
@@ -125,7 +125,7 @@
               <p-chart
                 type="bar"
                 [data]="barData()"
-                [options]="barOptions"
+                [options]="barOptions()"
                 height="280px"
                 ariaLabel="Bar chart of sales amount for each hour from 7 AM to 11 PM"
               />

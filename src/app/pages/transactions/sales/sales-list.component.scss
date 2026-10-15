@@ -28,27 +28,27 @@
 
   &.tone-brand {
     background: var(--brand-soft);
-    color: #8c5c00;
+    color: var(--brand-text);
   }
   &.tone-cash {
-    background: #fdf3d0;
-    color: #9a6b00;
+    background: var(--brand-soft);
+    color: var(--brand-text);
   }
   &.tone-upi {
-    background: #e8e7fd;
-    color: #4338ca;
+    background: var(--pay-upi-soft);
+    color: var(--pay-upi-text);
   }
   &.tone-card {
-    background: #dcf3f1;
-    color: #0f766e;
+    background: var(--pay-card-soft);
+    color: var(--pay-card-text);
   }
   &.tone-refund {
-    background: #fde8e8;
-    color: #b91c1c;
+    background: var(--danger-soft);
+    color: var(--danger-text);
   }
   &.tone-net {
-    background: #e8f5ec;
-    color: #15803d;
+    background: var(--success-soft);
+    color: var(--success-text);
   }
 }
 

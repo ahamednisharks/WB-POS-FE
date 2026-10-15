@@ -16,7 +16,7 @@
 .field-label {
   font-size: 0.85rem;
   font-weight: 500;
-  color: #3a3f45;
+  color: var(--text-soft);
 }
 
 .auto {
@@ -25,7 +25,7 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--text-muted);
-  background: #efece3;
+  background: var(--surface-muted);
   border-radius: 4px;
   padding: 1px 5px;
   margin-left: 0.25rem;
@@ -36,7 +36,7 @@
   font-size: 1.05rem;
   font-weight: 700;
   background: var(--brand-softer);
-  border-color: #ffe98a;
+  border-color: var(--brand-border);
 }
 
 .diff {
@@ -45,13 +45,13 @@
 
   &.diff-ok {
     color: var(--success);
-    background: #effaf3;
-    border-color: #bfe8cd;
+    background: var(--success-soft);
+    border-color: var(--success-border);
   }
 
   &.diff-bad {
     color: var(--danger);
-    background: #fef2f2;
-    border-color: #f8caca;
+    background: var(--danger-soft);
+    border-color: var(--danger-border);
   }
 }

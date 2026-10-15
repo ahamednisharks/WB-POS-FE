@@ -33,7 +33,7 @@
     align-items: center;
     justify-content: center;
     background: var(--brand-softer);
-    color: #b37800;
+    color: var(--brand-icon);
     font-weight: 700;
     font-size: 1.4rem;
   }
@@ -45,7 +45,7 @@
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #8c5c00;
+  color: var(--brand-text);
 }
 
 .info-grid {

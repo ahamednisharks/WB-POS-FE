@@ -8,6 +8,7 @@ import { TableModule } from 'primeng/table';
 import { Subscription } from 'rxjs';
 import { DashboardData, HourlySales, RecentBill } from '../../core/models';
 import { DashboardService } from '../../core/services/dashboard.service';
+import { ThemeService } from '../../core/services/theme.service';
 import { DatePreset, DateRange, displayDate, presetRange } from '../../core/utils/date.util';
 import { formatINR } from '../../core/utils/format.util';
 import { apiErrorMessage } from '../../core/utils/http-error.util';
@@ -20,24 +21,42 @@ import { InrCurrencyPipe } from '../../shared/pipes/inr-currency.pipe';
 type SplitKey = keyof DashboardData['paymentSplit'];
 
 /*
- * Chart palette. Brand yellow is deepened one step (#F5B700 → #E0A800) so the marks clear the
- * lightness band on a white card; UPI / Card companions validated for colour-blind separation.
+ * Chart palette comes from the theme (--chart-* in styles.scss). In Golden Ivory the brand yellow
+ * is deepened one step (#F5B700 → #E0A800) so the marks clear the lightness band on a white card.
+ * A canvas cannot use CSS variables, so the values are read here and re-read when the theme changes.
  */
-const SERIES = {
-  cash: '#E0A800',
-  cashHover: '#C99700',
-  upi: '#4F46E5',
-  card: '#0D9488',
-} as const;
-const GRID = '#EEEBE3';
-const TICK = '#6B6F76';
-const SURFACE = '#FFFFFF';
+interface ChartPalette {
+  cash: string;
+  cashHover: string;
+  upi: string;
+  card: string;
+  grid: string;
+  tick: string;
+  surface: string;
+  tooltip: string;
+}
+
+function readPalette(): ChartPalette {
+  const css = getComputedStyle(document.documentElement);
+  const v = (name: string) => css.getPropertyValue(name).trim();
+  return {
+    cash: v('--chart-cash'),
+    cashHover: v('--chart-cash-hover'),
+    upi: v('--chart-upi'),
+    card: v('--chart-card'),
+    grid: v('--chart-grid'),
+    tick: v('--chart-tick'),
+    surface: v('--surface-card'),
+    tooltip: v('--chart-tooltip'),
+  };
+}
+
 const FONT = "Inter, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 
-const SPLIT_SERIES: { key: SplitKey; label: string; color: string }[] = [
-  { key: 'cash', label: 'Cash', color: SERIES.cash },
-  { key: 'upi', label: 'UPI', color: SERIES.upi },
-  { key: 'card', label: 'Card', color: SERIES.card },
+const SPLIT_SERIES: { key: SplitKey; label: string }[] = [
+  { key: 'cash', label: 'Cash' },
+  { key: 'upi', label: 'UPI' },
+  { key: 'card', label: 'Card' },
 ];
 
 /** Shop hours plotted on the hourly chart: 7 AM … 11 PM. */
@@ -79,6 +98,13 @@ const PRESET_LABEL: Record<DatePreset, string> = {
 export class DashboardComponent {
   private readonly dashboard = inject(DashboardService);
   private readonly router = inject(Router);
+  private readonly themes = inject(ThemeService);
+
+  /** Re-read on every theme change (ThemeService sets data-theme before the signal changes). */
+  private readonly palette = computed(() => {
+    this.themes.theme();
+    return readPalette();
+  });
 
   protected readonly preset = signal<DatePreset>('TODAY');
   protected readonly range = signal<DateRange>(presetRange('TODAY'));
@@ -107,9 +133,10 @@ export class DashboardComponent {
   protected readonly split = computed(() => {
     const d = this.data();
     const total = d ? d.paymentSplit.cash + d.paymentSplit.upi + d.paymentSplit.card : 0;
+    const palette = this.palette();
     return SPLIT_SERIES.map((s) => {
       const amount = d?.paymentSplit[s.key] ?? 0;
-      return { ...s, amount, pct: total > 0 ? Math.round((amount / total) * 1000) / 10 : 0 };
+      return { ...s, color: palette[s.key], amount, pct: total > 0 ? Math.round((amount / total) * 1000) / 10 : 0 };
     });
   });
 
@@ -119,6 +146,7 @@ export class DashboardComponent {
 
   protected readonly donutData = computed<ChartData<'doughnut'>>(() => {
     const rows = this.split();
+    const surface = this.palette().surface;
     return {
       labels: rows.map((s) => s.label),
       datasets: [
@@ -127,8 +155,8 @@ export class DashboardComponent {
           backgroundColor: rows.map((s) => s.color),
           hoverBackgroundColor: rows.map((s) => s.color),
           // 2px surface-coloured gap between segments (not an outline).
-          borderColor: SURFACE,
-          hoverBorderColor: SURFACE,
+          borderColor: surface,
+          hoverBorderColor: surface,
           borderWidth: 2,
           hoverOffset: 4,
         },
@@ -136,7 +164,7 @@ export class DashboardComponent {
     };
   });
 
-  protected readonly donutOptions: ChartOptions<'doughnut'> = {
+  protected readonly donutOptions = computed<ChartOptions<'doughnut'>>(() => ({
     responsive: true,
     maintainAspectRatio: false,
     cutout: '70%',
@@ -145,7 +173,7 @@ export class DashboardComponent {
       // The legend (with values) is rendered in HTML under the chart.
       legend: { display: false },
       tooltip: {
-        backgroundColor: '#1F2328',
+        backgroundColor: this.palette().tooltip,
         padding: 10,
         cornerRadius: 8,
         titleFont: { family: FONT },
@@ -158,7 +186,7 @@ export class DashboardComponent {
         },
       },
     },
-  };
+  }));
 
   // ---------------------------------------------------------------- sales by hour (bar)
   private readonly hourly = computed<HourlySales[]>(() => {
@@ -184,8 +212,8 @@ export class DashboardComponent {
         {
           label: 'Sales',
           data: rows.map((h) => h.amount),
-          backgroundColor: SERIES.cash,
-          hoverBackgroundColor: SERIES.cashHover,
+          backgroundColor: this.palette().cash,
+          hoverBackgroundColor: this.palette().cashHover,
           borderRadius: 4,
           borderSkipped: 'start',
           maxBarThickness: 24,
@@ -196,14 +224,14 @@ export class DashboardComponent {
     };
   });
 
-  protected readonly barOptions: ChartOptions<'bar'> = {
+  protected readonly barOptions = computed<ChartOptions<'bar'>>(() => ({
     responsive: true,
     maintainAspectRatio: false,
     interaction: { mode: 'index', intersect: false },
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: '#1F2328',
+        backgroundColor: this.palette().tooltip,
         padding: 10,
         cornerRadius: 8,
         displayColors: false,
@@ -226,7 +254,7 @@ export class DashboardComponent {
         grid: { display: false },
         border: { display: false },
         ticks: {
-          color: TICK,
+          color: this.palette().tick,
           maxRotation: 0,
           autoSkip: true,
           autoSkipPadding: 8,
@@ -235,10 +263,10 @@ export class DashboardComponent {
       },
       y: {
         beginAtZero: true,
-        grid: { color: GRID, lineWidth: 1 },
+        grid: { color: this.palette().grid, lineWidth: 1 },
         border: { display: false },
         ticks: {
-          color: TICK,
+          color: this.palette().tick,
           maxTicksLimit: 5,
           padding: 6,
           font: { family: FONT, size: 11 },
@@ -246,7 +274,7 @@ export class DashboardComponent {
         },
       },
     },
-  };
+  }));
 
   constructor() {
     this.load();

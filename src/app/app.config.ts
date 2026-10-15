@@ -3,7 +3,9 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import localeEnIn from '@angular/common/locales/en-IN';
 import {
   ApplicationConfig,
+  inject,
   LOCALE_ID,
+  provideAppInitializer,
   provideBrowserGlobalErrorListeners,
   provideZoneChangeDetection,
 } from '@angular/core';
@@ -18,6 +20,7 @@ import { errorInterceptor } from './core/interceptors/error.interceptor';
 // Mock backend disabled — the app now talks to the real API (environment.apiUrl).
 // import { environment } from '../environments/environment';
 // import { mockBackendInterceptor } from './core/mock/mock-backend.interceptor';
+import { ThemeService } from './core/services/theme.service';
 import { AppTitleStrategy } from './core/services/title.strategy';
 import { BakeryPreset } from './core/theme/bakery-preset';
 
@@ -45,6 +48,10 @@ export const appConfig: ApplicationConfig = {
       // Ionic overlays use z-index 20000+; keep PrimeNG dialogs/overlays above them.
       zIndex: { modal: 21000, overlay: 32000, menu: 32000, tooltip: 33000 },
       translation: { dateFormat: 'dd-mm-yy', firstDayOfWeek: 1 },
+    }),
+    // Applies the user's colour theme from the start (and follows login / logout).
+    provideAppInitializer(() => {
+      inject(ThemeService);
     }),
     MessageService,
     ConfirmationService,
