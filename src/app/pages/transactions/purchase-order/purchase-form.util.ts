@@ -61,7 +61,7 @@ export function sameIds(a: readonly string[], b: readonly string[]): boolean {
 }
 
 /** For every row: all items except the ones already picked in other rows (prevents duplicates). */
-export function optionsPerRow(ids: readonly string[], all: PurchaseItemOption[]): PurchaseItemOption[][] {
+export function optionsPerRow<T extends { id: string }>(ids: readonly string[], all: T[]): T[][] {
   return ids.map((id) => all.filter((it) => it.id === id || !ids.includes(it.id)));
 }
 

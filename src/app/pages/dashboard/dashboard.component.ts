@@ -70,6 +70,7 @@ function hourLabel(hour: number): string {
 }
 
 const PRESET_LABEL: Record<DatePreset, string> = {
+  ALL: 'All time',
   TODAY: 'Today',
   YESTERDAY: 'Yesterday',
   WEEK: 'This week',
@@ -113,7 +114,7 @@ export class DashboardComponent {
   protected readonly error = signal<string | null>(null);
   private sub?: Subscription;
 
-  protected readonly skeletonCards = [0, 1, 2, 3];
+  protected readonly skeletonCards = [0, 1, 2, 3, 4];
   protected readonly skeletonRows = [0, 1, 2, 3, 4];
 
   protected readonly periodLabel = computed(() => {
@@ -310,5 +311,18 @@ export class DashboardComponent {
 
   protected openBill(bill: RecentBill): void {
     void this.router.navigate(['/orders', bill.id]);
+  }
+
+  /** Stock Summary filtered to the items at or below their minimum. */
+  protected openLowStock(): void {
+    void this.router.navigate(['/stock/summary'], { queryParams: { low: 1 } });
+  }
+
+  /** "Maavu, Sugar +3 more · view all" or "All items above minimum". */
+  protected lowStockNote(d: DashboardData): string {
+    if (d.lowStockCount === 0) return 'All items above minimum';
+    const names = d.lowStock.slice(0, 2).map((i) => i.name);
+    const more = d.lowStockCount - names.length;
+    return `${names.join(', ')}${more > 0 ? ` +${more} more` : ''} · view all`;
   }
 }

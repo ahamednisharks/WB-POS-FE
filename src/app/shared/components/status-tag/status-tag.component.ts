@@ -28,6 +28,22 @@ const STATUS_MAP: Record<string, { label: string; severity: TagSeverity }> = {
   CASH_OUT: { label: 'Cash-out', severity: 'warn' },
   ADMIN: { label: 'Admin', severity: 'contrast' },
   CASHIER: { label: 'Cashier', severity: 'info' },
+  // Stock issues
+  POSTED: { label: 'Posted', severity: 'success' },
+  PRODUCTION: { label: 'Production', severity: 'info' },
+  WASTAGE: { label: 'Wastage', severity: 'warn' },
+  EXPIRED: { label: 'Expired', severity: 'danger' },
+  DAMAGED: { label: 'Damaged', severity: 'danger' },
+  OTHER: { label: 'Other', severity: 'secondary' },
+  // Stock ledger movement types
+  OPENING: { label: 'Opening', severity: 'contrast' },
+  PURCHASE: { label: 'Purchase', severity: 'success' },
+  SALE: { label: 'Sale', severity: 'info' },
+  SALE_CANCEL: { label: 'Sale cancelled', severity: 'secondary' },
+  PE_EDIT: { label: 'PE reversal', severity: 'secondary' },
+  ADJUST: { label: 'Adjustment', severity: 'contrast' },
+  ISSUE: { label: 'Issue', severity: 'warn' },
+  ISSUE_CANCEL: { label: 'Issue cancelled', severity: 'secondary' },
 };
 
 /** Coloured p-tag for any status enum (Active = green, Inactive = grey, …). */

@@ -13,8 +13,10 @@ const PRESETS: Option<DatePreset>[] = [
   { label: 'Custom range', value: 'CUSTOM' },
 ];
 
+const ALL_PRESET: Option<DatePreset> = { label: 'All time', value: 'ALL' };
+
 /**
- * Period filter: Today / Yesterday / This week / This month / Custom range.
+ * Period filter: Today / Yesterday / This week / This month / Custom range (+ "All time" with `allowAll`).
  * Lays out as `.filter` blocks so it slots into a `.filter-bar`.
  */
 @Component({
@@ -25,7 +27,7 @@ const PRESETS: Option<DatePreset>[] = [
       <label [for]="id + '-preset'">{{ label() }}</label>
       <p-select
         [inputId]="id + '-preset'"
-        [options]="presets"
+        [options]="presets()"
         optionLabel="label"
         optionValue="value"
         [ngModel]="preset()"
@@ -59,12 +61,14 @@ const PRESETS: Option<DatePreset>[] = [
 export class DateRangeFilterComponent {
   readonly label = input('Period');
   readonly disabled = input(false);
+  /** Offers "All time" (empty from / to) as the first choice — for registers and reports. */
+  readonly allowAll = input(false);
   readonly preset = model<DatePreset>('TODAY');
   readonly range = model<DateRange>(presetRange('TODAY'));
   /** Fires once per user change with the final range. */
   readonly changed = output<DateRange>();
 
-  protected readonly presets = PRESETS;
+  protected readonly presets = computed(() => (this.allowAll() ? [ALL_PRESET, ...PRESETS] : PRESETS));
   protected readonly id = `drf-${Math.random().toString(36).slice(2, 8)}`;
   protected readonly today = new Date();
   private readonly picked = signal<Date[] | null>(null);

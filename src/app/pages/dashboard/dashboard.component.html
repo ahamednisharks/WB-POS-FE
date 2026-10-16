@@ -76,6 +76,24 @@
           <span class="stat-value">{{ d.cancelledCount }}</span>
           <span class="stat-sub">{{ d.cancelledAmount | inr }} · view bills</span>
         </div>
+        <div
+          class="stat-card clickable"
+          role="link"
+          tabindex="0"
+          aria-label="Low stock — open the stock summary"
+          (click)="openLowStock()"
+          (keydown.enter)="openLowStock()"
+        >
+          <span class="stat-label">
+            <span class="stat-icon tone-warn"
+              ><i class="pi pi-exclamation-triangle" aria-hidden="true"></i
+            ></span>
+            Low Stock
+            <i class="pi pi-arrow-right go" aria-hidden="true"></i>
+          </span>
+          <span class="stat-value" [class.low-stock]="d.lowStockCount > 0">{{ d.lowStockCount }}</span>
+          <span class="stat-sub">{{ lowStockNote(d) }}</span>
+        </div>
       </section>
 
       @if (d.totalBills > 0) {

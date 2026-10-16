@@ -64,6 +64,10 @@
     background: var(--danger-soft);
     color: var(--danger-text);
   }
+  &.tone-warn {
+    background: var(--brand-softer);
+    color: var(--warn-text);
+  }
 }
 
 .stat-card.clickable {

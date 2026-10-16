@@ -11,6 +11,7 @@ import { CategoryService } from '../../../core/services/category.service';
 import { ItemService } from '../../../core/services/item.service';
 import { ITEM_TYPE_LABEL, ITEM_TYPE_OPTIONS, STATUS_OPTIONS } from '../../../core/utils/constants';
 import { initials } from '../../../core/utils/format.util';
+import { isLowStock } from '../../../core/utils/stock.util';
 import { ListPageBase } from '../../../shared/base/list-page.base';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
@@ -132,7 +133,7 @@ export class ItemListComponent extends ListPageBase<Item> implements OnInit {
   }
 
   protected isLowStock(item: Item): boolean {
-    return item.type !== 'SALE' && item.currentStock <= item.minStock;
+    return isLowStock(item);
   }
 
   protected openForm(item: Item | null = null): void {

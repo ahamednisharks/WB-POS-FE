@@ -1,0 +1,226 @@
+<div class="page">
+  <app-page-header
+    title="Stock Summary"
+    subtitle="Warehouse register of raw materials: Opening + Purchased + Adjusted − Used − Wastage − Sold = Balance"
+    searchPlaceholder="Search item, code or category"
+    [showAdd]="false"
+    (search)="onSearch($event)"
+  >
+    <p-button
+      headerActions
+      label="Excel"
+      icon="pi pi-file-excel"
+      severity="secondary"
+      [outlined]="true"
+      [loading]="exporting() === 'excel'"
+      [disabled]="exporting() !== null || total() === 0"
+      (onClick)="export('excel')"
+    />
+    <p-button
+      headerActions
+      label="PDF"
+      icon="pi pi-file-pdf"
+      severity="secondary"
+      [outlined]="true"
+      [loading]="exporting() === 'pdf'"
+      [disabled]="exporting() !== null || total() === 0"
+      (onClick)="export('pdf')"
+    />
+    <div class="filter-bar">
+      <app-date-range-filter
+        [(preset)]="preset"
+        [(range)]="range"
+        [allowAll]="true"
+        label="Period"
+        (changed)="applyFilters()"
+      />
+      <div class="filter">
+        <label for="stk-f-category">Category</label>
+        <p-select
+          inputId="stk-f-category"
+          [options]="categories()"
+          optionLabel="name"
+          optionValue="id"
+          [filter]="true"
+          [showClear]="true"
+          placeholder="All categories"
+          [ngModel]="categoryId()"
+          (ngModelChange)="onCategory($event)"
+        />
+      </div>
+      <div class="filter">
+        <label for="stk-f-type">Type</label>
+        <p-select
+          inputId="stk-f-type"
+          [options]="typeOptions"
+          optionLabel="label"
+          optionValue="value"
+          [showClear]="true"
+          placeholder="Raw & Both"
+          [ngModel]="type()"
+          (ngModelChange)="onType($event)"
+        />
+      </div>
+      <div class="filter">
+        <label for="stk-f-low">Low stock only</label>
+        <p-toggleswitch inputId="stk-f-low" [ngModel]="lowOnly()" (ngModelChange)="onLowOnly($event)" />
+      </div>
+    </div>
+  </app-page-header>
+
+  @if (sums(); as s) {
+    <section class="stat-grid register-stats" aria-label="Stock totals">
+      <div class="stat-card">
+        <span class="stat-label">Items</span>
+        <span class="stat-value">{{ s.itemCount }}</span>
+        <span class="stat-sub">stock-tracked, matching filters</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Low Stock</span>
+        <span class="stat-value" [class.low-stock]="s.lowCount > 0">{{ s.lowCount }}</span>
+        <span class="stat-sub">at or below min stock</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Purchased</span>
+        <span class="stat-value">{{ s.purchased | qty }}</span>
+        <span class="stat-sub">{{ periodLabel() }}</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Sent to Production</span>
+        <span class="stat-value">{{ s.used | qty }}</span>
+        <span class="stat-sub">wastage {{ s.wastage | qty }} · {{ periodLabel() }}</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Stock Value</span>
+        <span class="stat-value">{{ s.stockValue | inr }}</span>
+        <span class="stat-sub">balance × last purchase rate</span>
+      </div>
+    </section>
+  }
+
+  <div class="card p-0">
+    <p-table
+      [value]="loading() ? [] : rows()"
+      [lazy]="true"
+      (onLazyLoad)="onLazyLoad($event)"
+      [paginator]="true"
+      [rows]="pageSize()"
+      [first]="first()"
+      [totalRecords]="total()"
+      [rowsPerPageOptions]="pageSizeOptions"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="{first}–{last} of {totalRecords}"
+      [loading]="loading()"
+      [showLoader]="false"
+      sortField="name"
+      [sortOrder]="1"
+      dataKey="id"
+      [scrollable]="true"
+      [rowHover]="true"
+      [tableStyle]="{ 'min-width': '92rem' }"
+    >
+      <ng-template #header>
+        <tr>
+          <th pSortableColumn="name">Item <p-sortIcon field="name" /></th>
+          <th pSortableColumn="categoryName">Category <p-sortIcon field="categoryName" /></th>
+          <th pSortableColumn="opening" class="text-right">Opening <p-sortIcon field="opening" /></th>
+          <th pSortableColumn="purchased" class="text-right">Purchased <p-sortIcon field="purchased" /></th>
+          <th pSortableColumn="used" class="text-right">Used <p-sortIcon field="used" /></th>
+          <th pSortableColumn="wastage" class="text-right">Wastage <p-sortIcon field="wastage" /></th>
+          <th class="text-right">Sold</th>
+          <th class="text-right">Adjusted</th>
+          <th pSortableColumn="closing" class="text-right">Balance <p-sortIcon field="closing" /></th>
+          <th pSortableColumn="minStock" class="text-right">Min <p-sortIcon field="minStock" /></th>
+          <th pSortableColumn="purchasePrice" class="text-right">Rate <p-sortIcon field="purchasePrice" /></th>
+          <th pSortableColumn="stockValue" class="text-right">Value <p-sortIcon field="stockValue" /></th>
+          <th class="text-right" style="width: 7rem">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-r>
+        <tr>
+          <td>
+            <div class="item-cell">
+              <span class="bold">{{ r.name }}</span>
+              <span class="muted small">{{ r.code }} · {{ r.type === 'RAW' ? 'Raw material' : 'Made & sold' }}</span>
+            </div>
+          </td>
+          <td>{{ r.categoryName }}</td>
+          <td class="text-right num" [class.zero]="r.opening === 0">{{ r.opening | qty }}</td>
+          <td class="text-right num" [class.zero]="r.purchased === 0">{{ r.purchased | qty }}</td>
+          <td class="text-right num" [class.zero]="r.used === 0">{{ r.used | qty }}</td>
+          <td class="text-right num" [class.zero]="r.wastage === 0">{{ r.wastage | qty }}</td>
+          <td class="text-right num" [class.zero]="r.sold === 0">{{ r.type === 'BOTH' ? (r.sold | qty) : '—' }}</td>
+          <td class="text-right num" [class.zero]="r.adjusted === 0">{{ r.adjusted | qty }}</td>
+          <td class="text-right num bold nowrap" [class.low-stock]="r.isLow">
+            @if (r.isLow) {
+              <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+            }
+            {{ r.closing | qty }} {{ r.unitCode }}
+          </td>
+          <td class="text-right num muted">{{ r.minStock > 0 ? (r.minStock | qty) : '—' }}</td>
+          <td class="text-right num">{{ r.purchasePrice | inr }}</td>
+          <td class="text-right num">{{ r.stockValue | inr }}</td>
+          <td>
+            <div class="row-actions">
+              <p-button
+                icon="pi pi-history"
+                [text]="true"
+                [rounded]="true"
+                pTooltip="Stock ledger"
+                tooltipPosition="top"
+                ariaLabel="Open stock ledger"
+                (onClick)="openLedger(r)"
+              />
+              <p-button
+                icon="pi pi-sliders-h"
+                severity="secondary"
+                [text]="true"
+                [rounded]="true"
+                pTooltip="Opening stock / adjust"
+                tooltipPosition="top"
+                ariaLabel="Adjust stock"
+                (onClick)="openAdjust(r)"
+              />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template #loadingbody>
+        @for (row of skeletonRows; track row) {
+          <tr appSkeletonRow [cols]="13"></tr>
+        }
+      </ng-template>
+
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="13">
+            @if (error(); as e) {
+              <app-empty-state
+                icon="pi pi-exclamation-triangle"
+                title="Could not load the stock summary"
+                [message]="e"
+                actionLabel="Retry"
+                (action)="load()"
+              />
+            } @else {
+              <app-empty-state
+                icon="pi pi-warehouse"
+                [title]="lowOnly() ? 'No items are low on stock' : 'No raw materials found'"
+                [message]="
+                  lowOnly()
+                    ? 'Every stock-tracked item is above its minimum. Switch off “Low stock only” to see all items.'
+                    : 'Add items of type Raw Material (or Both) in Item Master; purchases and issues then appear here.'
+                "
+              />
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<app-stock-ledger-dialog [(visible)]="ledgerVisible" [item]="ledgerItem()" />
+<app-stock-adjust-dialog [(visible)]="adjustVisible" [item]="adjustItem()" (saved)="load()" />

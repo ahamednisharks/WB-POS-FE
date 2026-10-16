@@ -4,7 +4,8 @@
  */
 const IST_OFFSET_MS = 330 * 60 * 1000;
 
-export type DatePreset = 'TODAY' | 'YESTERDAY' | 'WEEK' | 'MONTH' | 'CUSTOM';
+/** ALL = no date bounds (only offered by filters that opt in with `allowAll`). */
+export type DatePreset = 'ALL' | 'TODAY' | 'YESTERDAY' | 'WEEK' | 'MONTH' | 'CUSTOM';
 
 export interface DateRange {
   from: string;
@@ -74,6 +75,9 @@ export function daysInMonth(month: string): number {
 export function presetRange(preset: Exclude<DatePreset, 'CUSTOM'>): DateRange {
   const today = todayIST();
   switch (preset) {
+    case 'ALL':
+      // Empty bounds; ApiService drops empty query params, so the API sees no from / to.
+      return { from: '', to: '' };
     case 'TODAY':
       return { from: today, to: today };
     case 'YESTERDAY': {

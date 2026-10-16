@@ -372,6 +372,8 @@ export const salesRoutes: MockRoute[] = [
         paymentSplit: { cash: round2(split.cash), upi: round2(split.upi), card: round2(split.card) },
         salesByHour: hours,
         topItems: [...byItem.values()].sort((a, b) => b.amount - a.amount).slice(0, 5),
+        lowStockCount: 0,
+        lowStock: [],
         recentBills: [...completed]
           .sort((a, b) => b.billDate.localeCompare(a.billDate))
           .slice(0, 10)

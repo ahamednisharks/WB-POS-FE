@@ -1,0 +1,199 @@
+<div class="page">
+  <app-page-header
+    title="Stock Issue"
+    subtitle="Raw material sent from the warehouse to the production unit, or written off — reduces stock"
+    searchPlaceholder="Search issue no, item or remarks"
+    addLabel="New Issue"
+    (search)="onSearch($event)"
+    (add)="openForm()"
+  >
+    <div class="filter-bar">
+      <app-date-range-filter
+        [(preset)]="preset"
+        [(range)]="range"
+        [allowAll]="true"
+        label="Issue Date"
+        (changed)="applyFilters()"
+      />
+      <div class="filter">
+        <label for="si-f-reason">Reason</label>
+        <p-select
+          inputId="si-f-reason"
+          [options]="reasonOptions"
+          optionLabel="label"
+          optionValue="value"
+          [showClear]="true"
+          placeholder="All reasons"
+          [ngModel]="reason()"
+          (ngModelChange)="onReason($event)"
+        />
+      </div>
+      <div class="filter">
+        <label for="si-f-status">Status</label>
+        <p-select
+          inputId="si-f-status"
+          [options]="statusOptions"
+          optionLabel="label"
+          optionValue="value"
+          [showClear]="true"
+          placeholder="All"
+          [ngModel]="status()"
+          (ngModelChange)="onStatus($event)"
+        />
+      </div>
+    </div>
+  </app-page-header>
+
+  <div class="card p-0">
+    <p-table
+      [value]="loading() ? [] : rows()"
+      [lazy]="true"
+      (onLazyLoad)="onLazyLoad($event)"
+      [paginator]="true"
+      [rows]="pageSize()"
+      [first]="first()"
+      [totalRecords]="total()"
+      [rowsPerPageOptions]="pageSizeOptions"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="{first}–{last} of {totalRecords}"
+      [loading]="loading()"
+      [showLoader]="false"
+      sortField="createdAt"
+      [sortOrder]="-1"
+      dataKey="id"
+      [scrollable]="true"
+      [rowHover]="true"
+      [tableStyle]="{ 'min-width': '72rem' }"
+    >
+      <ng-template #header>
+        <tr>
+          <th pSortableColumn="issueNo">Issue No <p-sortIcon field="issueNo" /></th>
+          <th pSortableColumn="issueDate">Date <p-sortIcon field="issueDate" /></th>
+          <th>Items</th>
+          <th>Reason</th>
+          <th pSortableColumn="totalValue" class="text-right">Value <p-sortIcon field="totalValue" /></th>
+          <th pSortableColumn="issuedByName">Issued By <p-sortIcon field="issuedByName" /></th>
+          <th pSortableColumn="status">Status <p-sortIcon field="status" /></th>
+          <th class="text-right" style="width: 10rem">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-si>
+        <tr>
+          <td>
+            <button type="button" class="link-btn nowrap" (click)="view(si)">{{ si.issueNo }}</button>
+          </td>
+          <td class="nowrap">{{ si.issueDate | istDate }}</td>
+          <td>
+            <div class="items-cell" [title]="si.itemsSummary || ''">{{ si.itemsSummary || '—' }}</div>
+            <div class="muted small">{{ si.itemCount }} {{ si.itemCount === 1 ? 'item' : 'items' }}</div>
+          </td>
+          <td>
+            <div class="reason-tags">
+              @for (r of reasonsOf(si); track r) {
+                <app-status-tag [status]="r" [label]="reasonLabel[r]" />
+              }
+            </div>
+          </td>
+          <td class="text-right num bold">{{ si.totalValue | inr }}</td>
+          <td>{{ si.issuedByName }}</td>
+          <td><app-status-tag [status]="si.status" /></td>
+          <td>
+            <div class="row-actions">
+              <p-button
+                icon="pi pi-eye"
+                [text]="true"
+                [rounded]="true"
+                [loading]="opening() === si.id"
+                pTooltip="View"
+                tooltipPosition="top"
+                ariaLabel="View stock issue"
+                (onClick)="view(si)"
+              />
+              @if (si.isEditable) {
+                <p-button
+                  icon="pi pi-pencil"
+                  [text]="true"
+                  [rounded]="true"
+                  pTooltip="Edit (same day only)"
+                  tooltipPosition="top"
+                  ariaLabel="Edit stock issue"
+                  (onClick)="openForm(si)"
+                />
+              }
+              @if (auth.isAdmin() && si.status === 'POSTED') {
+                <p-button
+                  icon="pi pi-ban"
+                  severity="danger"
+                  [text]="true"
+                  [rounded]="true"
+                  pTooltip="Cancel (puts stock back)"
+                  tooltipPosition="top"
+                  ariaLabel="Cancel stock issue"
+                  (onClick)="openCancel(si)"
+                />
+              }
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template #footer>
+        @if (sums(); as s) {
+          @if (!loading() && total() > 0) {
+            <tr>
+              <td colspan="4">
+                Total · {{ s.postedCount }} posted
+                @if (s.cancelledCount > 0) {
+                  · {{ s.cancelledCount }} cancelled
+                }
+              </td>
+              <td class="text-right num">{{ s.totalValue | inr }}</td>
+              <td colspan="3" class="muted small">value of posted issues</td>
+            </tr>
+          }
+        }
+      </ng-template>
+
+      <ng-template #loadingbody>
+        @for (r of skeletonRows; track r) {
+          <tr appSkeletonRow [cols]="8"></tr>
+        }
+      </ng-template>
+
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="8">
+            @if (error(); as e) {
+              <app-empty-state
+                icon="pi pi-exclamation-triangle"
+                title="Could not load stock issues"
+                [message]="e"
+                actionLabel="Retry"
+                (action)="load()"
+              />
+            } @else {
+              <app-empty-state
+                icon="pi pi-sign-out"
+                title="No stock issues found"
+                message="Nothing matches these filters. Record raw material sent to production to reduce stock."
+                actionLabel="New Issue"
+                actionIcon="pi pi-plus"
+                (action)="openForm()"
+              />
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<app-stock-issue-form [(visible)]="formVisible" [issue]="editing()" (saved)="onChanged($event)" />
+<app-stock-issue-view
+  [(visible)]="viewVisible"
+  [issue]="viewing()"
+  (edit)="editFromView($event)"
+  (cancel)="cancelFromView($event)"
+/>
+<app-stock-issue-cancel-dialog [(visible)]="cancelVisible" [issue]="cancelling()" (cancelled)="onChanged($event)" />

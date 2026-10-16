@@ -1,0 +1,106 @@
+<app-form-dialog
+  [(visible)]="visible"
+  [header]="'Stock Issue ' + (issue()?.issueNo ?? '')"
+  width="900px"
+  [maximizable]="true"
+>
+  @if (issue(); as si) {
+    @if (si.status === 'CANCELLED') {
+      <p-message severity="warn" class="view-alert" styleClass="w-full">
+        Cancelled by {{ si.cancelledByName || '—' }} on {{ si.cancelledAt | istDateTime }} — stock was put back.
+        @if (si.cancelReason) {
+          Reason: {{ si.cancelReason }}
+        }
+      </p-message>
+    }
+
+    <div class="detail-grid">
+      <div class="dl">
+        <span>Issue No</span>
+        <span><code class="code">{{ si.issueNo }}</code></span>
+      </div>
+      <div class="dl">
+        <span>Issue Date</span>
+        <span>{{ si.issueDate | istDate }}</span>
+      </div>
+      <div class="dl">
+        <span>Issued By</span>
+        <span>{{ si.issuedByName }}</span>
+      </div>
+      <div class="dl">
+        <span>Status</span>
+        <span><app-status-tag [status]="si.status" /></span>
+      </div>
+      <div class="dl">
+        <span>Entered</span>
+        <span>{{ si.createdAt | istDateTime }}</span>
+      </div>
+      <div class="dl">
+        <span>Remarks</span>
+        <span class="note-text">{{ si.remarks || '—' }}</span>
+      </div>
+    </div>
+
+    <div class="view-table-wrap">
+      <table class="view-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Item</th>
+            <th class="text-right">Qty</th>
+            <th>Reason</th>
+            <th class="text-right">Rate</th>
+            <th class="text-right">Value</th>
+            <th>Remarks</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (line of si.items; track line.itemId; let i = $index) {
+            <tr>
+              <td class="muted">{{ i + 1 }}</td>
+              <td class="bold">
+                {{ line.itemName }}
+                <div class="muted small">{{ line.itemCode }}</div>
+              </td>
+              <td class="text-right num">{{ line.qty | qty }} {{ line.unitCode }}</td>
+              <td><app-status-tag [status]="line.reason" [label]="reasonLabel[line.reason]" /></td>
+              <td class="text-right num">{{ line.rate | inr }}</td>
+              <td class="text-right num bold">{{ line.amount | inr }}</td>
+              <td class="muted" style="white-space: normal">{{ line.remarks || '—' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="bottom-grid">
+      <div>
+        <p class="muted small" style="margin: 0.25rem 0 0">
+          Value is at each item's last purchase rate when the issue was posted.
+        </p>
+      </div>
+      <div class="totals">
+        <div class="kv">
+          <span>Lines</span>
+          <span class="num">{{ si.itemCount }}</span>
+        </div>
+        <div class="kv grand">
+          <span>Total Value</span>
+          <span class="num">{{ si.totalValue | inr }}</span>
+        </div>
+      </div>
+    </div>
+  }
+
+  <div dialogFooter class="dialog-footer">
+    <p-button label="Close" severity="secondary" [outlined]="true" (onClick)="visible.set(false)" />
+    @if (issue(); as si) {
+      @if (si.isEditable) {
+        <p-button label="Edit" icon="pi pi-pencil" severity="secondary" (onClick)="emit('edit')" />
+      }
+      @if (auth.isAdmin() && si.status === 'POSTED') {
+        <p-button label="Cancel Issue" icon="pi pi-ban" severity="danger" [outlined]="true" (onClick)="emit('cancel')" />
+      }
+    }
+  </div>
+</app-form-dialog>

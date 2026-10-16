@@ -1,0 +1,212 @@
+<app-form-dialog
+  [(visible)]="visible"
+  [header]="issue() ? 'Edit Stock Issue ' + (issue()?.issueNo ?? '') : 'New Stock Issue'"
+  width="1080px"
+  [maximizable]="true"
+>
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+    <div class="form-grid cols-3">
+      <div class="field">
+        <label id="si-no-label">Issue No</label>
+        <div class="readonly-box" aria-labelledby="si-no-label">
+          @if (issue(); as si) {
+            <code class="code">{{ si.issueNo }}</code>
+          } @else {
+            <span class="muted">Auto (generated on save)</span>
+          }
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="si-date">Issue Date <span class="req">*</span></label>
+        <p-datepicker
+          inputId="si-date"
+          formControlName="issueDate"
+          [showIcon]="true"
+          [readonlyInput]="true"
+          [maxDate]="today"
+          dateFormat="dd-mm-yy"
+          placeholder="dd-mm-yyyy"
+        />
+        @if (form.hasError('dateFuture')) {
+          <small class="error-text" role="alert">Issue date cannot be in the future</small>
+        }
+        <app-field-error [control]="form.controls.issueDate" label="Issue date" />
+      </div>
+
+      <div class="field">
+        <label for="si-remarks">Remarks</label>
+        <input
+          pInputText
+          id="si-remarks"
+          formControlName="remarks"
+          maxlength="200"
+          placeholder="e.g. Morning batch"
+          autocomplete="off"
+        />
+        <app-field-error [control]="form.controls.remarks" label="Remarks" />
+      </div>
+    </div>
+
+    <div class="section-head">
+      <div class="form-section-title">Items taken out of the warehouse</div>
+      <p-button label="Add Item" icon="pi pi-plus" size="small" [outlined]="true" (onClick)="addLine()" />
+    </div>
+    @if (lines.errors?.['server']; as serverError) {
+      <small class="error-text" role="alert">{{ serverError }}</small>
+    }
+
+    <div class="lines-scroll" [class.as-cards]="layout.isMobile()">
+      <div class="lines si-lines" formArrayName="items">
+        <div class="line-head" aria-hidden="true">
+          <span>#</span>
+          <span>Item <span class="req">*</span></span>
+          <span>Qty <span class="req">*</span></span>
+          <span>Available</span>
+          <span>Reason <span class="req">*</span></span>
+          <span>Remarks</span>
+          <span class="text-right">Value</span>
+          <span></span>
+        </div>
+
+        @for (line of lines.controls; track line; let i = $index) {
+          @let item = itemMap().get(line.controls.itemId.value);
+          @let c = calc()[i];
+          <div class="line" [formGroupName]="i">
+            <div class="c-no cell-text"><span class="card-only">Item&nbsp;</span>{{ i + 1 }}</div>
+
+            <div class="c-item field">
+              <label class="cell-label" [for]="'si-item-' + i">Item</label>
+              <p-select
+                [inputId]="'si-item-' + i"
+                formControlName="itemId"
+                [options]="rowOptions()[i]"
+                optionLabel="name"
+                optionValue="id"
+                [filter]="true"
+                filterBy="name,code"
+                [loading]="itemsLoading()"
+                placeholder="Select raw material"
+                emptyMessage="No raw material items — add one in Item Master"
+                (onChange)="onItemPicked(i, $event.value)"
+              />
+              <app-field-error [control]="line.controls.itemId" label="Item" />
+            </div>
+
+            <div class="field">
+              <label class="cell-label" [for]="'si-qty-' + i">Qty</label>
+              <p-inputnumber
+                [inputId]="'si-qty-' + i"
+                formControlName="qty"
+                [min]="0"
+                [maxFractionDigits]="item?.allowDecimal ? 3 : 0"
+                placeholder="0"
+                inputStyleClass="w-full"
+              />
+              <app-field-error [control]="line.controls.qty" label="Qty" [messages]="{ min: 'Enter qty > 0' }" />
+            </div>
+
+            <div class="c-meta c-avail cell-text">
+              <span class="cell-label">Available</span>
+              @if (c?.available !== null && c?.available !== undefined) {
+                <span [class.low-stock]="c.exceeds">{{ c.available | qty }} {{ c.unitCode }}</span>
+                @if (c.exceeds) {
+                  <small class="warn-text"
+                    ><i class="pi pi-exclamation-triangle" aria-hidden="true"></i> More than available</small
+                  >
+                }
+              } @else {
+                <span class="muted">—</span>
+              }
+            </div>
+
+            <div class="field">
+              <label class="cell-label" [for]="'si-reason-' + i">Reason</label>
+              <p-select
+                [inputId]="'si-reason-' + i"
+                formControlName="reason"
+                [options]="reasonOptions"
+                optionLabel="label"
+                optionValue="value"
+              />
+            </div>
+
+            <div class="field">
+              <label class="cell-label" [for]="'si-line-remarks-' + i">Remarks</label>
+              <input
+                pInputText
+                [id]="'si-line-remarks-' + i"
+                formControlName="remarks"
+                maxlength="200"
+                [placeholder]="line.controls.reason.value === 'OTHER' ? 'Required for Other' : 'Optional'"
+                autocomplete="off"
+              />
+              @if (line.hasError('remarksRequired') && (line.controls.remarks.touched || line.controls.reason.dirty)) {
+                <small class="error-text" role="alert">Say why when the reason is Other</small>
+              }
+            </div>
+
+            <div class="c-amount cell-text">
+              <span class="cell-label">Value</span>
+              <span class="bold">{{ c?.amount ?? 0 | inr }}</span>
+            </div>
+
+            <div class="c-remove">
+              <p-button
+                icon="pi pi-trash"
+                severity="danger"
+                [text]="true"
+                [rounded]="true"
+                [disabled]="lines.length === 1"
+                pTooltip="Remove row"
+                tooltipPosition="left"
+                [ariaLabel]="'Remove item row ' + (i + 1)"
+                (onClick)="removeLine(i)"
+              />
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="bottom-grid">
+      <div>
+        <p class="muted small" style="margin: 0.25rem 0 0">
+          Every line reduces the warehouse stock by its quantity. Value is at the item's last purchase rate.
+          @if (issue()) {
+            Editing is allowed only on the day the issue was created.
+          }
+        </p>
+        @if (anyExceeds()) {
+          <p class="warn-text small" style="margin: 0.5rem 0 0">
+            <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+            A line takes more than is available — the server will refuse it.
+          </p>
+        }
+      </div>
+      <div class="totals">
+        <div class="kv">
+          <span>Lines</span>
+          <span class="num">{{ lines.length }}</span>
+        </div>
+        <div class="kv grand">
+          <span>Total Value</span>
+          <span class="num">{{ totalValue() | inr }}</span>
+        </div>
+      </div>
+    </div>
+
+    <button type="submit" hidden aria-hidden="true"></button>
+  </form>
+
+  <div dialogFooter class="dialog-footer">
+    <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="visible.set(false)" />
+    <p-button
+      [label]="issue() ? 'Update Issue' : 'Save Issue'"
+      icon="pi pi-save"
+      [loading]="saving()"
+      [disabled]="form.invalid || saving()"
+      (onClick)="save()"
+    />
+  </div>
+</app-form-dialog>

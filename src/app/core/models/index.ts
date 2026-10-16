@@ -17,3 +17,4 @@ export * from './day-close.model';
 export * from './purchase-order.model';
 export * from './purchase-entry.model';
 export * from './dashboard.model';
+export * from './stock.model';

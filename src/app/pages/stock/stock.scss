@@ -1,0 +1,104 @@
+/* Stock screens — builds on purchase-shared.scss (line grid, totals, detail grid, view table). */
+
+.si-lines {
+  --cols: 2rem minmax(12rem, 3fr) minmax(7rem, 1fr) minmax(7.5rem, 1fr) minmax(10rem, 1.3fr) minmax(10rem, 1.6fr) 6.5rem
+    2.5rem;
+  --lines-min: 64rem;
+}
+
+/* "Available" cell: qty on the first line, the warning (if any) under it. */
+.c-avail {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.1rem;
+  color: var(--text-soft);
+  font-size: 0.85rem;
+}
+
+.as-cards .c-avail {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Item summary in the issue list — one line, trimmed. */
+.items-cell {
+  max-width: 24rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reason-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+/* Stock register: the stat strip above the table and a quieter zero. */
+.register-stats {
+  margin-bottom: 1rem;
+}
+
+.zero {
+  color: var(--text-faint);
+}
+
+/* Stock summary table: item name with its code / category underneath. */
+.item-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 10rem;
+}
+
+/* Adjust dialog: the live "resulting stock" box. */
+.result-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-soft);
+  font-variant-numeric: tabular-nums;
+
+  strong {
+    font-size: 1.15rem;
+  }
+
+  &.negative {
+    border-color: var(--danger);
+    background: var(--danger-soft);
+
+    strong {
+      color: var(--danger-text);
+    }
+  }
+}
+
+/* Ledger dialog */
+.ledger-strip {
+  margin-bottom: 0.9rem;
+}
+
+.ledger-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: flex-end;
+  margin-bottom: 0.75rem;
+
+  .filter {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+    label {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+  }
+}

@@ -22,6 +22,17 @@ export interface RecentBill {
   paymentMode: BillPaymentMode | null;
 }
 
+/** Stock-tracked item at or below its minimum stock (right now, not date-bound). */
+export interface LowStockItem {
+  id: string;
+  code: string;
+  name: string;
+  type: 'RAW' | 'BOTH';
+  unitCode: string;
+  currentStock: number;
+  minStock: number;
+}
+
 export interface DashboardData {
   from: string;
   to: string;
@@ -34,4 +45,8 @@ export interface DashboardData {
   salesByHour: HourlySales[];
   topItems: TopItem[];
   recentBills: RecentBill[];
+  /** Items at or below their min stock right now. */
+  lowStockCount: number;
+  /** Up to 20 of them, lowest first. */
+  lowStock: LowStockItem[];
 }

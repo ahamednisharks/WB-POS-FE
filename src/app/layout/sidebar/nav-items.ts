@@ -51,6 +51,15 @@ export const NAV_ITEMS: NavItem[] = [
       { label: 'Purchase Entry (PE)', icon: 'pi pi-file-import', route: '/transactions/purchase-entries', roles: ADMIN },
     ],
   },
+  {
+    label: 'Stock',
+    icon: 'pi pi-warehouse',
+    roles: ALL,
+    children: [
+      { label: 'Stock Summary', icon: 'pi pi-list-check', route: '/stock/summary', roles: ADMIN },
+      { label: 'Stock Issue', icon: 'pi pi-sign-out', route: '/stock/issues', roles: ALL },
+    ],
+  },
 ];
 
 /** Keeps only the entries (and group children) the role may see. */

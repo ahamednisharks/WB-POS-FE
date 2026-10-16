@@ -146,6 +146,24 @@ export const routes: Routes = [
           },
         ],
       },
+      {
+        path: 'stock',
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: () => (inject(AuthService).isAdmin() ? 'summary' : 'issues') },
+          {
+            path: 'summary',
+            title: 'Stock Summary',
+            data: { roles: ADMIN },
+            loadComponent: () => import('./pages/stock/stock-summary.component').then((m) => m.StockSummaryComponent),
+          },
+          {
+            path: 'issues',
+            title: 'Stock Issue',
+            data: { roles: ALL },
+            loadComponent: () => import('./pages/stock/stock-issue-list.component').then((m) => m.StockIssueListComponent),
+          },
+        ],
+      },
     ],
   },
   { path: '**', redirectTo: '' },
